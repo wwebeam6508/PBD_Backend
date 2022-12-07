@@ -1,0 +1,18 @@
+{
+    "NODE_PORT":9430,
+    "databaseURL":"https://example.com",
+    "ACCESS_TOKEN_EXPIRES_IN": "1h",
+    "REFRESH_TOKEN_EXPIRES_IN": "7d",
+    "JWT_ACCESS_TOKEN_SECRET": "12234",
+    "JWT_REFRESH_TOKEN_SECRET": "12333",
+    "JWT_ACCESS_SIGN_OPTIONS":{
+        "issuer": "example.com",
+        "audience": "example LTD",
+        "expiresIn": "10m"
+    },
+    "JWT_REFRESH_SIGN_OPTIONS":{
+        "issuer": "example.com",
+        "audience": "example LTD",
+        "expiresIn": "1y"
+    }
+}
