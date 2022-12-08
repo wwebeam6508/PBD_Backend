@@ -5,7 +5,8 @@ import env from './env_config.json' assert { type: "json" }
 import firebaseconfig from './src/configs/firebase.config.js'
 import authRouter from './src/routes/Auth.route.js'
 import errorHandler from './src/middleware/error.js'
-import expressAsyncErrors from 'express-async-errors'
+import 'express-async-errors'
+import process from 'process'
 const port = env.NODE_PORT || 3000
 const app = express()
 const { json, urlencoded } = pkg
@@ -21,15 +22,14 @@ app.use(
 app.get('/', (req, res) => {
   res.json({ message: 'ok' })
 })
-expressAsyncErrors
 app.use('/auth', authRouter)
 app.use(errorHandler)
 
 app.listen(port, () => {
   console.log(`PBDBackend app listening at PORT:${port}`)
 });
-// process.on('uncaughtException', function (err) {
-//   console.error(err);
-//   console.log("Node NOT Exiting...");
-// });
+process.on('uncaughtException', function (err) {
+  console.error(err.message);
+  console.error(err.stack)
+});
 export const Backend = https.onRequest(app)
