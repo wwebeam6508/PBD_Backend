@@ -39,6 +39,18 @@ const signIn = async ({
     }
 }
 
+const updateRefreshToken = async ({
+    token,
+    userID
+}) => {
+    const db = admin.firestore()
+    const ref = db.doc(`users/${userID}`)
+    await ref.update({refreshToken: token}).catch((err)=>{
+        console.log(err)
+        throw new BadRequestError(err.message);
+    })
+}
+
 const refresh = async ({
     token
 }) => {
@@ -50,7 +62,8 @@ const refresh = async ({
         const accessToken = await generateJWT({payload:data.data})
         return {
             refreshToken:refreshToken,
-            accessToken:accessToken
+            accessToken:accessToken,
+            userID:data.data.userID
         }
     } catch (error) {
         throw new BadRequestError(error.message);
@@ -59,5 +72,6 @@ const refresh = async ({
 
 export {
     signIn,
-    refresh
+    refresh,
+    updateRefreshToken
 }
