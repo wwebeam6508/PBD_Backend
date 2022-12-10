@@ -27,6 +27,7 @@ const signIn = async ({
       throw new BadRequestError('Username or Password is invalid!');
     }
     delete data.password
+    delete data.refreshToken
 
     const accessToken = await generateJWT({payload:{data}})
     const refreshToken = await generateJWT({
