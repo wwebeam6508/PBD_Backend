@@ -47,7 +47,6 @@ const updateRefreshToken = async ({
     const db = admin.firestore()
     const ref = db.doc(`users/${userID}`)
     await ref.update({refreshToken: token}).catch((err)=>{
-        console.log(err)
         throw new BadRequestError(err.message);
     })
 }

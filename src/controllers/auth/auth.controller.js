@@ -5,7 +5,6 @@ import { refresh, signIn, updateRefreshToken } from "../../services/auth/auth.se
    * @async
    * @method
    * @param {ExpressRequest} httpRequest
-   * @returns {Promise.<ControllerResponse> }
    */
 async function login(httpRequest) {
     const body = httpRequest.body

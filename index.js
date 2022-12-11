@@ -3,10 +3,11 @@ import pkg from 'body-parser'
 import { https } from 'firebase-functions'
 import env from './env_config.json' assert { type: "json" }
 import firebaseconfig from './src/configs/firebase.config.js'
-import authRouter from './src/routes/Auth.route.js'
 import errorHandler from './src/middleware/error.js'
 import 'express-async-errors'
 import process from 'process'
+import routes from './src/routes/index.js'
+
 const port = env.NODE_PORT || 3000
 const app = express()
 const { json, urlencoded } = pkg
@@ -22,7 +23,8 @@ app.use(
 app.get('/', (req, res) => {
   res.json({ message: 'ok' })
 })
-app.use('/auth', authRouter)
+
+routes(app)
 app.use(errorHandler)
 
 app.listen(port, () => {
