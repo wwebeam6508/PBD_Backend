@@ -12,8 +12,8 @@ function validateLogin(httpRequest) {
     username: Joi.string().min(3).max(20).alphanum().required(),
     password: Joi.string().min(4).max(20).alphanum().required()
   });
-  return schema.validate(httpRequest.body, options);
-};
+  return schema.validate(httpRequest.body, options)
+}
 export {
     validateLogin
 }

@@ -1,7 +1,7 @@
 import { UniqueConstraintError, ValidationError, AggregateError } from 'sequelize';
 import { APIError } from '../utils/api-errors.js'
 
-export default (error, req, res, next) => {
+export default (error, req, res) => {
 
     // catch api error
     if (error instanceof APIError) {

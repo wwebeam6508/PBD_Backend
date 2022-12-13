@@ -6,7 +6,7 @@ import firebaseconfig from './src/configs/firebase.config.js'
 import errorHandler from './src/middleware/error.js'
 import 'express-async-errors'
 import routes from './src/routes/index.js'
-import { loadCheckLimitData, updateLimitData } from './loadChecklimit.js'
+import { loadCheckLimitData } from './loadChecklimit.js'
 
 
 const port = env.NODE_PORT || 3000
