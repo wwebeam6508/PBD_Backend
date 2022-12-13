@@ -5,8 +5,9 @@ import env from './env_config.json' assert { type: "json" }
 import firebaseconfig from './src/configs/firebase.config.js'
 import errorHandler from './src/middleware/error.js'
 import 'express-async-errors'
-import process from 'process'
 import routes from './src/routes/index.js'
+import { loadCheckLimitData, updateLimitData } from './loadChecklimit.js'
+
 
 const port = env.NODE_PORT || 3000
 const app = express()
@@ -20,8 +21,16 @@ app.use(
   })
 )
 
+// load checklimitdata to local variable of app
+if(env.isLimitOn){
+  const limit_data = await loadCheckLimitData()
+  app.locals.limit = limit_data.limit
+  app.locals.count = limit_data.count
+  app.locals.date = limit_data.date
+}
+
 app.get('/', (req, res) => {
-  res.json({ message: 'ok' })
+  res.json({ message: 'what are you doing?' })
 })
 
 routes(app)
@@ -29,9 +38,6 @@ app.use(errorHandler)
 
 app.listen(port, () => {
   console.log(`PBDBackend app listening at PORT:${port}`)
-});
-process.on('uncaughtException', function (err) {
-  console.error(err.message);
-  console.error(err.stack)
-});
+})
+
 export const Backend = https.onRequest(app)

@@ -1,10 +1,10 @@
 import admin from 'firebase-admin'
-import { BadRequestError, NotFoundError } from '../../utils/api-errors.js'
+import { AccessDeniedError, BadRequestError, NotFoundError } from '../../utils/api-errors.js'
 import { generateJWT, verifyRefreshJWT } from './jwt.service.js'
 import bcrypt from 'bcrypt'
 import env
 from '../../../env_config.json' assert { type: "json" };
-const signIn = async ({
+const loginDB = async ({
     username,
     password
 }) => {
@@ -51,13 +51,25 @@ const updateRefreshToken = async ({
     })
 }
 
-const refresh = async ({
+const checkRefreshToken = async ({
+    token,
+    userID
+}) =>{
+    const db = admin.firestore()
+    const ref = db.doc(`users/${userID}`)
+    const result = await ref.get()
+    if(result.data().refreshToken.split(" ")[1] != token) return false
+    return true
+}
+
+const refreshTokenDB = async ({
     token
 }) => {
     try {
         const data = await verifyRefreshJWT({token:token})
+        if(!await checkRefreshToken({token:token, userID:data.data.userID})) throw new AccessDeniedError("Access Denied");
         const refreshToken = await generateJWT({
-            payload:data.data,secretKey:env.JWT_REFRESH_TOKEN_SECRET
+            payload:{data:data.data},secretKey:env.JWT_REFRESH_TOKEN_SECRET
             ,signOption:env.JWT_REFRESH_SIGN_OPTIONS})
         const accessToken = await generateJWT({payload:data.data})
         return {
@@ -71,7 +83,7 @@ const refresh = async ({
 }
 
 export {
-    signIn,
-    refresh,
+    loginDB,
+    refreshTokenDB,
     updateRefreshToken
 }

@@ -1,5 +1,5 @@
 
-import { refresh, signIn, updateRefreshToken } from "../../services/auth/auth.service.js";
+import { refreshTokenDB, loginDB, updateRefreshToken } from "../../services/auth/auth.service.js";
 /**
    * Handle logging in user.
    * @async
@@ -8,7 +8,7 @@ import { refresh, signIn, updateRefreshToken } from "../../services/auth/auth.se
    */
 async function login(httpRequest) {
     const body = httpRequest.body
-    const data = await signIn({username:body.username, password:body.password})
+    const data = await loginDB({username:body.username, password:body.password})
     await updateRefreshToken({token:data.refreshToken,userID:data.userProfile.userID})
     return {
         statusCode: 200,
@@ -26,7 +26,7 @@ async function login(httpRequest) {
 
 async function refreshToken(httpRequest){
     const body = httpRequest.body
-    const data = await refresh({token:body.refreshToken.split(' ')[1]})
+    const data = await refreshTokenDB({token:body.refreshToken.split(' ')[1]})
     await updateRefreshToken({token:data.refreshToken,userID:data.userID})
     return {
         statusCode: 200,

@@ -38,12 +38,12 @@ export default (error, req, res, next) => {
         }
         });
     }
-
+    
     // connect all errors
     return res.status(500).send({
         error: {
         code: 500,
-        message: 'Something went wrong!'
+        message: error.message
         }
     });
 };
