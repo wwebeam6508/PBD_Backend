@@ -14,5 +14,6 @@
         "issuer": "example.com",
         "audience": "example LTD",
         "expiresIn": "1y"
-    }
+    },
+    "isLimitOn":true
 }

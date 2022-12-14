@@ -1,7 +1,7 @@
 import { UniqueConstraintError, ValidationError, AggregateError } from 'sequelize';
 import { APIError } from '../utils/api-errors.js'
 
-export default (error, req, res) => {
+export default (error, req, res, next) => {
 
     // catch api error
     if (error instanceof APIError) {
@@ -38,12 +38,12 @@ export default (error, req, res) => {
         }
         });
     }
-    
+
     // connect all errors
     return res.status(500).send({
         error: {
         code: 500,
-        message: error.message
+        message: 'Something went wrong!'
         }
     });
 };

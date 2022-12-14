@@ -1,4 +1,4 @@
-
+import checkLimit from "../utils/checkLimit.js";
 
 export default (controller) => async (req, res,next) => {
     const httpRequest = {
@@ -28,10 +28,9 @@ export default (controller) => async (req, res,next) => {
               }
           }
       }
+      await checkLimit(res)
       return res.status(httpResponse.statusCode).send(httpResponse.body);
     } catch (error) {
       next(error)
     }
 };
-
-
