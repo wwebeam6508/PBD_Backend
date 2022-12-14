@@ -11,6 +11,6 @@ export default () => (req, res, next) => {
         req.user = decoded;
         next();
     } catch (error) {
-        throw new AccessDeniedError(error.messager);
+        throw new AccessDeniedError(error.message);
     }
 }

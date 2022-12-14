@@ -6,7 +6,6 @@ import firebaseconfig from './src/configs/firebase.config.js'
 import errorHandler from './src/middleware/error.js'
 import 'express-async-errors'
 import routes from './src/routes/index.js'
-import { loadCheckLimitData } from './loadChecklimit.js'
 
 
 const port = env.NODE_PORT || 3000
@@ -21,14 +20,6 @@ app.use(
   })
 )
 
-// load checklimitdata to local variable of app
-if(env.isLimitOn){
-  const limit_data = await loadCheckLimitData()
-  app.locals.limit = limit_data.limit
-  app.locals.count = limit_data.count
-  app.locals.date = limit_data.date
-}
-
 app.get('/', (req, res) => {
   res.json({ message: 'what are you doing?' })
 })
@@ -39,5 +30,6 @@ app.use(errorHandler)
 app.listen(port, () => {
   console.log(`PBDBackend app listening at PORT:${port}`)
 })
+
 
 export const Backend = https.onRequest(app)
