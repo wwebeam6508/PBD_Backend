@@ -8,7 +8,7 @@ export default function checkLimit(req) {
       req.app.locals.count = 0
       req.app.locals.date = moment().format(`DD/MM/YYYY`)
     }
-    if(local_variable.count >= local_variable.limit ) throw new AccessDeniedError("has been exceeded limit")
+    if(local_variable.count >= local_variable.limit ) throw new AccessDeniedError("has been exceeded limit per day")
     req.app.locals.count = req.app.locals.count + 1
     req.app.locals.date = moment().format(`DD/MM/YYYY`)
 }
