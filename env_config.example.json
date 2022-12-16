@@ -1,5 +1,5 @@
 {
-    "NODE_PORT":9430,
+    "NODE_PORT":3333,
     "databaseURL":"https://example.com",
     "ACCESS_TOKEN_EXPIRES_IN": "1h",
     "REFRESH_TOKEN_EXPIRES_IN": "7d",
