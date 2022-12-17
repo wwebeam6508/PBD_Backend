@@ -41,16 +41,7 @@ async function refreshToken(httpRequest){
     }
 }
 
-async function getTest(httpRequest) {
-    const body = httpRequest.body
-    return {
-        statusCode: 200,
-        body:body
-    }
-}
-
 export {
-    getTest,
     login,
     refreshToken
 }

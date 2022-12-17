@@ -1,5 +1,6 @@
 import AuthRoutes from './Auth.route.js'
 import MenuRoutes from './Menu.route.js'
+import ProjectManagement from './ProjectManagement.route.js'
 
 const routes = [
   {
@@ -9,6 +10,10 @@ const routes = [
   {
     path: '/menu',
     route: MenuRoutes
+  },
+  {
+    path: '/projectmanagement',
+    route: ProjectManagement
   }
 ];
 
