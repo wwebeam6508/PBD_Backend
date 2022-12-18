@@ -1,6 +1,9 @@
 import { initializeApp, cert } from "firebase-admin/app";
-import serviceAccount from '../../serviceAccount.json' assert { type: "json" };
-import env from '../../env_config.json'assert { type: "json" };
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const env = require('../../env_config.json');
+const serviceAccount = require('../../serviceAccount.json');
+
 
 export default function init() {
   initializeApp({

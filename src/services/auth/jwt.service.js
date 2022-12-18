@@ -1,7 +1,8 @@
 import jwt from 'jsonwebtoken'
-import env
-from '../../../env_config.json' assert { type: "json" };
 import { BadRequestError } from '../../utils/api-errors.js'
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const env = require('../../../env_config.json');
 
 const generateJWT = async ({
   payload, 

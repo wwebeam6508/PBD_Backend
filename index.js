@@ -1,14 +1,16 @@
 import express from 'express'
 import pkg from 'body-parser'
 import { https } from 'firebase-functions'
-import env from './env_config.json' assert { type: "json" }
-import limitedInvoke from './limitedInvoke.json' assert { type: "json" }
 import firebaseconfig from './src/configs/firebase.config.js'
 import errorHandler from './src/middleware/error.js'
 import routes from './src/routes/index.js'
 import onExit from 'signal-exit'
 import fs from 'fs'
 import 'express-async-errors'
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const env = require('./env_config.json');
+const limitedInvoke = require('./limitedInvoke.json');
 
 const port = env.NODE_PORT || 3000
 const app = express()

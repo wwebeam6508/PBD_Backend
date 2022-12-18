@@ -2,8 +2,9 @@ import admin from 'firebase-admin'
 import { AccessDeniedError, BadRequestError, NotFoundError } from '../../utils/api-errors.js'
 import { generateJWT, verifyRefreshJWT } from './jwt.service.js'
 import bcrypt from 'bcrypt'
-import env
-from '../../../env_config.json' assert { type: "json" };
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const env = require('../../../env_config.json');
 const loginDB = async ({
     username,
     password

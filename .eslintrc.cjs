@@ -8,7 +8,7 @@ module.exports = {
     'parser': "@babel/eslint-parser",
     'parserOptions': {
         'requireConfigFile': false,
-        'ecmaVersion': 12,
+        'ecmaVersion': '12',
         'sourceType': 'module',
         'plugins': [
             '@babel/plugin-syntax-import-assertions'

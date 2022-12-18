@@ -1,6 +1,8 @@
 import jwt from 'jsonwebtoken'
 import { AccessDeniedError } from '../utils/api-errors.js'
-import env from '../../env_config.json'assert { type: "json" };
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const env = require('../../env_config.json');
 export default () => (req, res, next) => {
     try {
         const token = req.header("Authorization").split(' ')[1];
