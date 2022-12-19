@@ -24,6 +24,10 @@ async function getWorkPagination(httpRequest) {
     }
 }
 
+async function addWork() {
+    
+}
+
 export {
     getWorkPagination
 }

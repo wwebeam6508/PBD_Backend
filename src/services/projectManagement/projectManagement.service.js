@@ -16,8 +16,6 @@ const getWorks = async ({
     } catch (error) {
         throw new BadRequestError(error.message);
     }
-    
-
 }
 
 const getAllWorksCount = async () =>{
