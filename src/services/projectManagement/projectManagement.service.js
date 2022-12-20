@@ -19,18 +19,18 @@ const getWorks = async ({
 }
 
 const addWork = async ({
-    projectName,
+    title,
     date = new Date(date),
     detail = "",
     profit = 0,
-    photo = []
+    images = []
 }) => {
     const body = {
-        projectName,
+        title,
         date: admin.firestore.Timestamp.fromDate(date),
         detail,
         profit,
-        photo
+        images
     }
     const db = admin.firestore()
     await db.collection('works').add(body).catch((error)=>{

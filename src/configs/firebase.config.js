@@ -4,7 +4,6 @@ const require = createRequire(import.meta.url);
 const env = require('../../env_config.json');
 const serviceAccount = require('../../serviceAccount.json');
 
-
 export default function init() {
   initializeApp({
     credential: cert({

@@ -9,7 +9,7 @@ const options = {
 
 function validateAddWork(httpRequest) {
   const schema = Joi.object({
-    projectName: Joi.string().min(4).max(20).alphanum().required(),
+    title: Joi.string().min(4).max(20).alphanum().required(),
     date: Joi.date().required()
   });
   return schema.validate(httpRequest.body, options)
