@@ -18,6 +18,35 @@ const getWorks = async ({
     }
 }
 
+const addWork = async ({
+    projectName,
+    date = new Date(date),
+    detail = "",
+    profit = 0,
+    photo = []
+}) => {
+    const body = {
+        projectName,
+        date: admin.firestore.Timestamp.fromDate(date),
+        detail,
+        profit,
+        photo
+    }
+    const db = admin.firestore()
+    await db.collection('works').add(body).catch((error)=>{
+        throw new BadRequestError(error.message);
+    })
+}
+
+const deleteWork = async ({
+    workID 
+}) => {
+    const db = admin.firestore()
+    await db.collection('works').doc(workID).delete().catch((error)=>{
+        throw new BadRequestError(error.message);
+    })
+}
+
 const getAllWorksCount = async () =>{
     try {
         const db = admin.firestore()
@@ -29,6 +58,8 @@ const getAllWorksCount = async () =>{
 }
 
 export {
+    deleteWork,
+    addWork,
     getWorks,
     getAllWorksCount
 }

@@ -1,7 +1,7 @@
-import { getAllWorksCount, getWorks } from "../../services/projectManagement/projectManagement.service.js";
+import { addWork, deleteWork, getAllWorksCount, getWorks } from "../../services/projectManagement/projectManagement.service.js";
 import { pageArray } from "../../utils/helper.util.js";
 
-async function getWorkPagination(httpRequest) {
+async function getWorkPaginationController(httpRequest) {
     const params = httpRequest.params
     const pageSize = 5
     const pages = pageArray(await getAllWorksCount(), pageSize, params.page, 5)
@@ -24,10 +24,30 @@ async function getWorkPagination(httpRequest) {
     }
 }
 
-async function addWork() {
-    
+async function addWorkController(httpRequest) {
+    const body = httpRequest.body
+    await addWork(body)
+    return {
+        statusCode: 200,
+        body:{
+            messasge:"success"
+        }
+    }
+}
+
+async function deleteWorkController(httpRequest){
+    const body = httpRequest.body
+    await deleteWork(body)
+    return {
+        statusCode: 200,
+        body:{
+            messasge:"success"
+        }
+    }
 }
 
 export {
-    getWorkPagination
+    addWorkController as addWork,
+    getWorkPaginationController as getWorkPagination,
+    deleteWorkController as deleteWork
 }

@@ -1,6 +1,6 @@
 import { updateAllowUserTypeDB } from "../../services/menu/menu.service.js";
 
-async function update(httpRequest) {
+async function updateRuleController(httpRequest) {
     const body = httpRequest.body
     await updateAllowUserTypeDB({menuID:body.menuID, containsUserTypeID:body.containsUserTypeID})
     return {
@@ -12,5 +12,5 @@ async function update(httpRequest) {
 }
 
 export {
-    update
+    updateRuleController as updateRule
 }

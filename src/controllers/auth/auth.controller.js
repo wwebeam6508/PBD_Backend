@@ -6,7 +6,7 @@ import { refreshTokenDB, loginDB, updateRefreshToken } from "../../services/auth
    * @method
    * @param {ExpressRequest} httpRequest
    */
-async function login(httpRequest) {
+async function loginController(httpRequest) {
     const body = httpRequest.body
     const data = await loginDB({username:body.username, password:body.password})
     await updateRefreshToken({token:data.refreshToken,userID:data.userProfile.userID})
@@ -24,7 +24,7 @@ async function login(httpRequest) {
     }
 }
 
-async function refreshToken(httpRequest){
+async function refreshTokenController(httpRequest){
     const body = httpRequest.body
     const data = await refreshTokenDB({token:body.refreshToken.split(' ')[1]})
     await updateRefreshToken({token:data.refreshToken,userID:data.userID})
@@ -42,6 +42,6 @@ async function refreshToken(httpRequest){
 }
 
 export {
-    login,
-    refreshToken
+    loginController as login,
+    refreshTokenController as refreshToken
 }
