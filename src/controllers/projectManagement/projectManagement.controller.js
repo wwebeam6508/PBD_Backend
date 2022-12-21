@@ -37,6 +37,7 @@ async function addWorkController(httpRequest) {
 
 async function deleteWorkController(httpRequest){
     const body = httpRequest.body
+    console.log(body)
     await deleteWork(body)
     return {
         statusCode: 200,
@@ -46,7 +47,19 @@ async function deleteWorkController(httpRequest){
     }
 }
 
+async function updateWorkController(httpRequest) {
+    const body = httpRequest.body
+    await updateWork(body)
+    return {
+        statusCode: 200,
+        body:{
+            messasge:"success"
+        }
+    }
+}
+
 export {
+    updateWorkController as updateWork,
     addWorkController as addWork,
     getWorkPaginationController as getWorkPagination,
     deleteWorkController as deleteWork
