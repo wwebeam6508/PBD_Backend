@@ -15,5 +15,6 @@
         "audience": "example LTD",
         "expiresIn": "1y"
     },
-    "isLimitOn":true
+    "isLimitOn":true,
+    "CLIENT_URL":"http://localhost:3000"
 }

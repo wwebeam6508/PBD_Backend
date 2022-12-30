@@ -8,6 +8,8 @@ import onExit from 'signal-exit'
 import fs from 'fs'
 import 'express-async-errors'
 import { createRequire } from 'module';
+import cors from 'cors'
+
 const require = createRequire(import.meta.url);
 const env = require('./env_config.json');
 const limitedInvoke = require('./limitedInvoke.json');
@@ -23,6 +25,13 @@ app.use(
     extended: true
   })
 )
+
+const corsOptions = {
+  origin: env.CLIENT_URL,
+  optionsSuccessStatus: 200
+}
+
+app.use(cors(corsOptions));
 
 if(env.isLimitOn){
   app.locals.limit = limitedInvoke.limit

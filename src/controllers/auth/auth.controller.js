@@ -15,11 +15,9 @@ async function loginController(httpRequest) {
         body: {
             data: {
                 accessToken:data.accessToken,
-                userProfile:data.userProfile
+                userProfile:data.userProfile,
+                refreshToken:data.refreshToken
             }
-        },
-        cookie:{
-            refreshToken:data.refreshToken,
         }
     }
 }
@@ -32,11 +30,9 @@ async function refreshTokenController(httpRequest){
         statusCode: 200,
         body: {
             data: {
-                accessToken:data.accessToken
+                accessToken:data.accessToken,
+                refreshToken:data.refreshToken
             }
-        },
-        cookie:{
-            refreshToken:data.refreshToken
         }
     }
 }

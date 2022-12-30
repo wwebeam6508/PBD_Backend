@@ -6,7 +6,7 @@ import makeExpressCallback from '../middleware/express-callback.js'
 import makeValidatorCallback from '../middleware/validator-callback.js'
 /* GET programming languages. */
 
-router.post('/signin',makeValidatorCallback(validateLogin), makeExpressCallback(login))
+router.post('/login',makeValidatorCallback(validateLogin), makeExpressCallback(login))
 router.post('/refreshtoken', makeExpressCallback(refreshToken))
 
 export default router
