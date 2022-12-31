@@ -4,8 +4,6 @@ import { https } from 'firebase-functions'
 import firebaseconfig from './src/configs/firebase.config.js'
 import errorHandler from './src/middleware/error.js'
 import routes from './src/routes/index.js'
-import onExit from 'signal-exit'
-import fs from 'fs'
 import 'express-async-errors'
 import { createRequire } from 'module';
 import cors from 'cors'
@@ -33,7 +31,7 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-if(env.isLimitOn){
+if (env.isLimitOn) {
   app.locals.limit = limitedInvoke.limit
   app.locals.count = limitedInvoke.count
   app.locals.date = limitedInvoke.date
@@ -44,19 +42,6 @@ app.get('/', (req, res) => {
 })
 
 routes(app)
-
-
-onExit( ()=>{
-  try {
-    fs.writeFileSync('limitedInvoke.json', JSON.stringify({
-      limit: app.locals.limit,
-      count: app.locals.count,
-      date: app.locals.date
-    }))
-  } catch (error) {
-    console.error(error);         
-  }
-})
 
 app.use(errorHandler)
 app.listen(port, () => {
