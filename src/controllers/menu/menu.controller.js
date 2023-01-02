@@ -5,12 +5,24 @@ async function updateRuleController(httpRequest) {
     await updateAllowUserTypeDB(body)
     return {
         statusCode: 200,
-        body:{
-            messasge:"success"
+        body: {
+            messasge: "success"
+        }
+    }
+}
+
+async function getMenuController(httpRequest) {
+    const body = httpRequest.body
+    const data = await getMenuDB(body)
+    return {
+        statusCode: 200,
+        body: {
+            data: data
         }
     }
 }
 
 export {
+    getMenuController as getMenu,
     updateRuleController as updateRule
 }
