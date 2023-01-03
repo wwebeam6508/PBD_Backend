@@ -1,4 +1,4 @@
-import { updateAllowUserTypeDB } from "../../services/menu/menu.service.js";
+import { getMenuDB, updateAllowUserTypeDB } from "../../services/menu/menu.service.js";
 
 async function updateRuleController(httpRequest) {
     const body = httpRequest.body
