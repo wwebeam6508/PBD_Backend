@@ -1,5 +1,5 @@
 
-import { refreshTokenDB, loginDB, updateRefreshToken } from "../../services/auth/auth.service.js";
+import { refreshTokenDB, loginDB, updateRefreshToken, removeRefreshToken } from "../../services/auth/auth.service.js";
 /**
    * Handle logging in user.
    * @async
@@ -37,7 +37,19 @@ async function refreshTokenController(httpRequest){
     }
 }
 
+async function logout(httpRequest) {
+    const body = httpRequest.body
+    await removeRefreshToken({userID:body.userID})
+    return {
+        statusCode: 200,
+        body: {
+            messasge: "success"
+        }
+    }
+}
+
 export {
     loginController as login,
-    refreshTokenController as refreshToken
+    refreshTokenController as refreshToken,
+    logout as logout
 }

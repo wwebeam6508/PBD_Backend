@@ -83,8 +83,19 @@ const refreshTokenDB = async ({
     }
 }
 
+const removeRefreshToken = async ({
+    userID
+}) => {
+    const db = admin.firestore()
+    const ref = db.doc(`users/${userID}`)
+    await ref.update({refreshToken: ""}).catch((err)=>{
+        throw new BadRequestError(err.message);
+    })
+}
+
 export {
     loginDB,
     refreshTokenDB,
-    updateRefreshToken
+    updateRefreshToken,
+    removeRefreshToken
 }
