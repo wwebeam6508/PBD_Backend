@@ -17,12 +17,8 @@ const app = express()
 const { json, urlencoded } = pkg
 
 firebaseconfig()
-app.use(json())
-app.use(
-  urlencoded({
-    extended: true
-  })
-)
+app.use(json({ limit: '5mb' }));
+app.use(urlencoded({ extended: true, limit: '5mb' }));
 
 const corsOptions = {
   origin: env.CLIENT_URL,
@@ -42,7 +38,6 @@ app.get('/', (req, res) => {
 })
 
 routes(app)
-
 app.use(errorHandler)
 app.listen(port, () => {
   console.log(`PBDBackend app listening at PORT:${port}`)

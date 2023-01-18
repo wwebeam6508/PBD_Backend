@@ -43,7 +43,7 @@ export default (error, req, res, next) => { //eslint-disable-line no-unused-vars
     return res.status(500).send({
         error: {
             code: 500,
-            message: 'Something went wrong!'
+            message: error.message ? error.message : 'Internal Server Error'
         }
     });
 };

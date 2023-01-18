@@ -5,21 +5,21 @@ async function getWorkPaginationController(httpRequest) {
     const params = httpRequest.params
     const pageSize = 5
     const pages = pageArray(await getAllWorksCount(), pageSize, params.page, 5)
-    const workDoc = await (await getWorks({page:params.page,pageSize:pageSize}))
-    .map((res)=>{
-        return {
-            title:res.title,
-            contractor:res.contractor,
-            date: new Date(res.date._seconds * 1000)
-        }
-    })
+    const workDoc = await (await getWorks({ page: params.page, pageSize: pageSize }))
+        .map((res) => {
+            return {
+                title: res.title,
+                contractor: res.contractor,
+                date: new Date(res.date._seconds * 1000)
+            }
+        })
 
     return {
         statusCode: 200,
-        body:{
+        body: {
             currentPage: params.page,
-            pages:pages,
-            data:workDoc
+            pages: pages,
+            data: workDoc
         }
     }
 }
@@ -29,20 +29,19 @@ async function addWorkController(httpRequest) {
     await addWork(body)
     return {
         statusCode: 200,
-        body:{
-            messasge:"success"
+        body: {
+            messasge: "success"
         }
     }
 }
 
-async function deleteWorkController(httpRequest){
+async function deleteWorkController(httpRequest) {
     const body = httpRequest.body
-    console.log(body)
     await deleteWork(body)
     return {
         statusCode: 200,
-        body:{
-            messasge:"success"
+        body: {
+            messasge: "success"
         }
     }
 }
@@ -52,8 +51,8 @@ async function updateWorkController(httpRequest) {
     await updateWork(body)
     return {
         statusCode: 200,
-        body:{
-            messasge:"success"
+        body: {
+            messasge: "success"
         }
     }
 }
