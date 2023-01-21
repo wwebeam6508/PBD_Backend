@@ -13,24 +13,38 @@ const getHomeDetailData = async () => {
 }
 
 const updateHomeDetailData = async (body) => {
-    try {
-        let data = conditionEmptyฺBody(body)
-        const imageDataKey = ['background', 'background2']
-        for (const key of imageDataKey) {
-            if (data[key]) {
-                data[key] = (await uploadFiletoStorage(data[key], 'home', key))
-            }
-        }
-        const db = admin.firestore()
-        await db.doc('home/detail').update(data).catch((error) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let data = conditionEmptyฺBody(body)
+            //check if data have nasted object and check if data have image
+            data = await uploadStorage(data)
+            const db = admin.firestore()
+            await db.doc('home/detail').update(data).catch((error) => {
+                throw new BadRequestError(error.message);
+            })
+            resolve(data)
+        } catch (error) {
             throw new BadRequestError(error.message);
-        })
-    } catch (error) {
-        throw new BadRequestError(error.message);
-    }
+        }
+    })
 }
 
-
+const uploadStorage = async (data) => {
+    let newData = data
+    for (const key in newData) {
+        if (typeof newData[key] === 'object') {
+            newData[key] = await uploadStorage(newData[key])
+        } else
+            if (newData[key].includes('data:image')) {
+                const image = newData[key]
+                const path = 'home'
+                const filename = key
+                const url = await uploadFiletoStorage(image, path, filename)
+                newData[key] = url
+            }
+    }
+    return newData
+}
 
 export {
     getHomeDetailData,

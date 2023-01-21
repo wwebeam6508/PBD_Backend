@@ -19,10 +19,11 @@ async function getHomeDetail() {
 
 async function updateHomeDetail(httpRequest) {
    const body = httpRequest.body
-   await updateHomeDetailData(body)
+   const data = await updateHomeDetailData(body)
    return {
       statusCode: 200,
       body: {
+         data: data,
          messasge: "success"
       }
    }

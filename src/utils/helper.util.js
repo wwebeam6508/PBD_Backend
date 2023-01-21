@@ -46,14 +46,18 @@ function isEmpty(str) {
   if (typeof str === 'string') {
     return (!str || /^\s*$/.test(str))
   }
-  return false
+  return true
 }
 
 const conditionEmptyฺBody = (body) => {
   let data = {}
   for (const key in body) {
-    if (!isEmpty(body[key])) {
-      data[key] = body[key]
+    if (typeof body[key] === 'object') {
+      data[key] = conditionEmptyฺBody(body[key])
+    } else {
+      if (!isEmpty(body[key])) {
+        data[key] = body[key]
+      }
     }
   }
   return data
