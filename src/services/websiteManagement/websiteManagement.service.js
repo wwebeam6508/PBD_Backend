@@ -12,6 +12,16 @@ const getHomeDetailData = async () => {
     }
 }
 
+const getContactUsDetailData = async () => {
+    try {
+        const db = admin.firestore()
+        const response = await db.doc('contactUs/detail').get()
+        return response.data()
+    } catch (error) {
+        throw new BadRequestError(error.message);
+    }
+}
+
 const updateHomeDetailData = async (body) => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -20,6 +30,23 @@ const updateHomeDetailData = async (body) => {
             data = await uploadStorage(data)
             const db = admin.firestore()
             await db.doc('home/detail').update(data).catch((error) => {
+                throw new BadRequestError(error.message);
+            })
+            resolve(data)
+        } catch (error) {
+            throw new BadRequestError(error.message);
+        }
+    })
+}
+
+const updateContactUsDetailData = async (body) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let data = conditionEmptyฺBody(body)
+            //check if data have nasted object and check if data have image
+            data = await uploadStorage(data)
+            const db = admin.firestore()
+            await db.doc('contactUs/detail').update(data).catch((error) => {
                 throw new BadRequestError(error.message);
             })
             resolve(data)
@@ -47,6 +74,8 @@ const uploadStorage = async (data) => {
 }
 
 export {
+    getContactUsDetailData,
     getHomeDetailData,
-    updateHomeDetailData
+    updateHomeDetailData,
+    updateContactUsDetailData
 }
