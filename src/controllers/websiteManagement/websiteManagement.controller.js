@@ -1,4 +1,4 @@
-import { getContactUsDetailData, getHomeDetailData, updateContactUsDetailData, updateHomeDetailData } from "../../services/websiteManagement/websiteManagement.service.js"
+import { getAboutUsDetailData, getContactUsDetailData, getHomeDetailData, updateAboutUsDetailData, updateContactUsDetailData, updateHomeDetailData } from "../../services/websiteManagement/websiteManagement.service.js"
 
 
 /**
@@ -18,7 +18,17 @@ async function getHomeDetail() {
 }
 
 async function getContactUsDetail() {
-   const data = await getContactUsDetailData()
+   let data = await getContactUsDetailData()
+   return {
+      statusCode: 200,
+      body: {
+         data: data
+      }
+   }
+}
+
+async function getAboutUsDetail() {
+   let data = await getAboutUsDetailData()
    return {
       statusCode: 200,
       body: {
@@ -30,6 +40,18 @@ async function getContactUsDetail() {
 async function updateHomeDetail(httpRequest) {
    const body = httpRequest.body
    const data = await updateHomeDetailData(body)
+   return {
+      statusCode: 200,
+      body: {
+         data: data,
+         messasge: "success"
+      }
+   }
+}
+
+async function updateAboutUsDetail(httpRequest) {
+   const body = httpRequest.body
+   const data = await updateAboutUsDetailData(body)
    return {
       statusCode: 200,
       body: {
@@ -54,6 +76,8 @@ async function updateContactUsDetail(httpRequest) {
 export {
    getHomeDetail as getHome,
    getContactUsDetail as getContactUs,
+   getAboutUsDetail as getAboutUs,
    updateHomeDetail as updateHome,
+   updateAboutUsDetail as updateAboutUs,
    updateContactUsDetail as updateContactUs
 }

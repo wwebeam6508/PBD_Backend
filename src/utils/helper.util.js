@@ -43,7 +43,7 @@ function randomString(length) {
 }
 
 function isEmpty(str) {
-  if (typeof str === 'string') {
+  if (typeof str === 'string' || typeof str === 'number') {
     return (!str || /^\s*$/.test(str))
   }
   return true
@@ -52,7 +52,14 @@ function isEmpty(str) {
 const conditionEmptyฺBody = (body) => {
   let data = {}
   for (const key in body) {
-    if (typeof body[key] === 'object') {
+    if (Array.isArray(body[key])) {
+      let array = []
+      for (let i = 0; i < body[key].length; i++) {
+        array.push(conditionEmptyฺBody(body[key][i]))
+      }
+      data[key] = array
+    }
+    else if (typeof body[key] === 'object') {
       data[key] = conditionEmptyฺBody(body[key])
     } else {
       if (!isEmpty(body[key])) {
