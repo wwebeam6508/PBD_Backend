@@ -1,5 +1,6 @@
 import admin from 'firebase-admin'
 import { uuid } from 'uuidv4'
+import bcrypt from 'bcrypt'
 function getOffset(currentPage = 1, listPerPage) {
   return (currentPage - 1) * [listPerPage]
 }
@@ -49,6 +50,21 @@ function isEmpty(str) {
   return true
 }
 
+function checkIsAganistItSelf(requesterID, userid) {
+  if (requesterID === userid) {
+    return true
+  }
+  return false
+}
+const checkIsGodAdmin = async (id) => {
+  const db = admin.firestore()
+  const response = await db.doc(`users/${id}`).get()
+  if (response.data().userTypeID === 'GOD') {
+    return true
+  }
+  return false
+}
+
 const conditionEmptyฺBody = (body) => {
   let data = {}
   for (const key in body) {
@@ -96,9 +112,16 @@ const uploadFiletoStorage = (image, path, filename) => {
     blobStream.end(Buffer(image.split(';base64,')[1], 'base64'));
   })
 }
-
+const encryptPassword = async (password) => {
+  const salt = await bcrypt.genSalt(10)
+  const hash = await bcrypt.hash(password, salt)
+  return hash
+}
 
 export {
+  checkIsGodAdmin,
+  checkIsAganistItSelf,
+  encryptPassword,
   isEmpty,
   randomString,
   pageArray,

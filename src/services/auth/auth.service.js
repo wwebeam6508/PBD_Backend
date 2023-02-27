@@ -13,7 +13,7 @@ const loginDB = async ({
     const db = admin.firestore()
     const ref = db.collection('users')
     const query = await ref.where('username', '==', username).get()
-    if(query.empty){
+    if (query.empty) {
         throw new NotFoundError('user not found')
     }
 
@@ -22,22 +22,24 @@ const loginDB = async ({
         data = doc.data()
         data.userID = doc.id
     })
-    
+    data.userType = await (await db.doc(`userType/${data.userTypeID}`).get()).data()
+
     const isValidPass = bcrypt.compareSync(password, data.password);
     if (!isValidPass) {
-      throw new BadRequestError('Username or Password is invalid!');
+        throw new BadRequestError('Username or Password is invalid!');
     }
     delete data.password
     delete data.refreshToken
 
-    const accessToken = await generateJWT({payload:{data}})
+    const accessToken = await generateJWT({ payload: { data } })
     const refreshToken = await generateJWT({
-        payload:{data},secretKey:env.JWT_REFRESH_TOKEN_SECRET
-        ,signOption:env.JWT_REFRESH_SIGN_OPTIONS})
+        payload: { data }, secretKey: env.JWT_REFRESH_TOKEN_SECRET
+        , signOption: env.JWT_REFRESH_SIGN_OPTIONS
+    })
     return {
-        accessToken:accessToken,
-        refreshToken:refreshToken,
-        userProfile:data
+        accessToken: accessToken,
+        refreshToken: refreshToken,
+        userProfile: data
     }
 }
 
@@ -47,7 +49,7 @@ const updateRefreshToken = async ({
 }) => {
     const db = admin.firestore()
     const ref = db.doc(`users/${userID}`)
-    await ref.update({refreshToken: token}).catch((err)=>{
+    await ref.update({ refreshToken: token }).catch((err) => {
         throw new BadRequestError(err.message);
     })
 }
@@ -55,11 +57,11 @@ const updateRefreshToken = async ({
 const checkRefreshToken = async ({
     token,
     userID
-}) =>{
+}) => {
     const db = admin.firestore()
     const ref = db.doc(`users/${userID}`)
     const result = await ref.get()
-    if(result.data().refreshToken.split(" ")[1] != token) return false
+    if (result.data().refreshToken.split(" ")[1] != token) return false
     return true
 }
 
@@ -67,16 +69,17 @@ const refreshTokenDB = async ({
     token
 }) => {
     try {
-        const data = await verifyRefreshJWT({token:token})
-        if(!await checkRefreshToken({token:token, userID:data.data.userID})) throw new AccessDeniedError("Access Denied");
+        const data = await verifyRefreshJWT({ token: token })
+        if (!await checkRefreshToken({ token: token, userID: data.data.userID })) throw new AccessDeniedError("Access Denied");
         const refreshToken = await generateJWT({
-            payload:{data:data.data},secretKey:env.JWT_REFRESH_TOKEN_SECRET
-            ,signOption:env.JWT_REFRESH_SIGN_OPTIONS})
-        const accessToken = await generateJWT({payload:data.data})
+            payload: { data: data.data }, secretKey: env.JWT_REFRESH_TOKEN_SECRET
+            , signOption: env.JWT_REFRESH_SIGN_OPTIONS
+        })
+        const accessToken = await generateJWT({ payload: data.data })
         return {
-            refreshToken:refreshToken,
-            accessToken:accessToken,
-            userID:data.data.userID
+            refreshToken: refreshToken,
+            accessToken: accessToken,
+            userID: data.data.userID
         }
     } catch (error) {
         throw new BadRequestError(error.message);
@@ -88,7 +91,7 @@ const removeRefreshToken = async ({
 }) => {
     const db = admin.firestore()
     const ref = db.doc(`users/${userID}`)
-    await ref.update({refreshToken: ""}).catch((err)=>{
+    await ref.update({ refreshToken: "" }).catch((err) => {
         throw new BadRequestError(err.message);
     })
 }

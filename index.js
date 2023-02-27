@@ -42,6 +42,18 @@ app.use(errorHandler)
 app.listen(port, () => {
   console.log(`PBDBackend app listening at PORT:${port}`)
 })
+process.on('uncaughtException', (err, origin) => {
+  console.error(`Caught exception: ${err}\nException origin: ${origin}`);
 
+  // Restart the server
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error(`Unhandled Rejection at: Promise ${promise}\nReason: ${reason}`);
+
+  // Restart the server
+  process.exit(1);
+});
 
 export const Backend = https.onRequest(app)

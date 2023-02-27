@@ -3,8 +3,10 @@ import { pageArray } from "../../utils/helper.util.js";
 
 async function getWorkPaginationController(httpRequest) {
     const params = httpRequest.params
-    const pageSize = 5
-    const pages = pageArray(await getAllWorksCount(), pageSize, params.page, 5)
+    const query = httpRequest.query
+    const pageSize = query.pageSize ? Number(query.pageSize) : 15
+    const allWorksCount = await getAllWorksCount()
+    const pages = pageArray(allWorksCount, pageSize, params.page, 5)
     const workDoc = await (await getWorks({ page: params.page, pageSize: pageSize }))
         .map((res) => {
             return {
@@ -19,7 +21,8 @@ async function getWorkPaginationController(httpRequest) {
         body: {
             currentPage: params.page,
             pages: pages,
-            data: workDoc
+            data: workDoc,
+            lastPage: Math.ceil(allWorksCount / pageSize)
         }
     }
 }

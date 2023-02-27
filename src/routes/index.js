@@ -2,6 +2,7 @@ import AuthRoutes from './Auth.route.js'
 import MenuRoutes from './Menu.route.js'
 import ProjectManagement from './ProjectManagement.route.js'
 import WebsiteManagement from './WebsiteManagement.route.js'
+import UserManagement from './UserManagement.route.js'
 
 const routes = [
   {
@@ -19,6 +20,10 @@ const routes = [
   {
     path: '/websitemanagement',
     route: WebsiteManagement
+  },
+  {
+    path: '/usermanagement',
+    route: UserManagement
   }
 ];
 

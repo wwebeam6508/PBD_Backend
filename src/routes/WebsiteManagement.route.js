@@ -1,7 +1,6 @@
 import { Router } from 'express';
 const router = Router();
 import makeExpressCallback from '../middleware/express-callback.js'
-import makeValidatorCallback from '../middleware/validator-callback.js'
 import Authentication from '../middleware/authentication.js'
 import { getAboutUs, getContactUs, getHome, updateAboutUs, updateContactUs, updateHome } from '../controllers/websiteManagement/websiteManagement.controller.js';
 
