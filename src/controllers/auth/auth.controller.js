@@ -8,30 +8,30 @@ import { refreshTokenDB, loginDB, updateRefreshToken, removeRefreshToken } from 
    */
 async function loginController(httpRequest) {
     const body = httpRequest.body
-    const data = await loginDB({username:body.username, password:body.password})
-    await updateRefreshToken({token:data.refreshToken,userID:data.userProfile.userID})
+    const data = await loginDB({ username: body.username, password: body.password })
+    await updateRefreshToken({ token: data.refreshToken, userID: data.userProfile.userID })
     return {
         statusCode: 200,
         body: {
             data: {
-                accessToken:data.accessToken,
-                userProfile:data.userProfile,
-                refreshToken:data.refreshToken
+                accessToken: data.accessToken,
+                userProfile: data.userProfile,
+                refreshToken: data.refreshToken
             }
         }
     }
 }
 
-async function refreshTokenController(httpRequest){
+async function refreshTokenController(httpRequest) {
     const body = httpRequest.body
-    const data = await refreshTokenDB({token:body.refreshToken.split(' ')[1]})
-    await updateRefreshToken({token:data.refreshToken,userID:data.userID})
+    const data = await refreshTokenDB({ token: body.refreshToken.split(' ')[1] })
+    await updateRefreshToken({ token: data.refreshToken, userID: data.userID })
     return {
         statusCode: 200,
         body: {
             data: {
-                accessToken:data.accessToken,
-                refreshToken:data.refreshToken
+                accessToken: data.accessToken,
+                refreshToken: data.refreshToken
             }
         }
     }
@@ -39,7 +39,7 @@ async function refreshTokenController(httpRequest){
 
 async function logout(httpRequest) {
     const body = httpRequest.body
-    await removeRefreshToken({userID:body.userID})
+    await removeRefreshToken({ userID: body.userID })
     return {
         statusCode: 200,
         body: {
