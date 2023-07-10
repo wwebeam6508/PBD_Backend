@@ -2,7 +2,10 @@ import {
   addWork,
   deleteWork,
   getAllWorksCount,
+  getCustomerName,
   getWorks,
+  getWorksByID,
+  updateWork,
 } from "../../services/projectManagement/projectManagement.service.js";
 import { pageArray } from "../../utils/helper.util.js";
 
@@ -22,11 +25,17 @@ async function getWorkPaginationController(httpRequest) {
         sortType: sortType,
       })
     ).map(async (res) => {
-      return {
+      let passData = {
         title: res.title,
-        contractor: (await res.customer.get()).data().name,
+        customer: (await res.customer.get()).data().name,
         date: new Date(res.date._seconds * 1000),
+        profit: res.profit ? res.profit : 0,
+        projectID: res.projectID,
       };
+      if (res.dateEnd) {
+        passData.dateEnd = new Date(res.dateEnd._seconds * 1000);
+      }
+      return passData;
     })
   );
   return {
@@ -36,6 +45,19 @@ async function getWorkPaginationController(httpRequest) {
       pages: pages,
       data: workDoc,
       lastPage: Math.ceil(allWorksCount / pageSize),
+    },
+  };
+}
+
+async function getWorkByIDController(httpRequest) {
+  const query = httpRequest.query;
+  let workDoc = await getWorksByID({
+    workID: query.workID,
+  });
+  return {
+    statusCode: 200,
+    body: {
+      data: workDoc,
     },
   };
 }
@@ -73,9 +95,21 @@ async function updateWorkController(httpRequest) {
   };
 }
 
+async function getCustomerNameController() {
+  const customerName = await getCustomerName();
+  return {
+    statusCode: 200,
+    body: {
+      data: customerName,
+    },
+  };
+}
+
 export {
+  getWorkByIDController as getWorkByID,
   updateWorkController as updateWork,
   addWorkController as addWork,
   getWorkPaginationController as getWorkPagination,
   deleteWorkController as deleteWork,
+  getCustomerNameController as getCustomerName,
 };
