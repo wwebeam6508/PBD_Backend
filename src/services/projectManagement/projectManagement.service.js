@@ -83,6 +83,24 @@ const addWork = async ({
 
 const deleteWork = async ({ workID }) => {
   const db = admin.firestore();
+  //remove images in storage
+  const workData = await getWorksByID({ workID });
+  if (workData.images && workData.images.length > 0) {
+    await Promise.all(
+      workData.images.map(async (image) => {
+        const fileName = `works/${getPathStorageFromUrl(image)}`;
+        await admin
+          .storage()
+          .bucket()
+          .file(fileName)
+          .delete()
+          .catch((error) => {
+            throw new BadRequestError(error.message);
+          });
+      })
+    );
+  }
+  //remove work in database
   await db
     .collection("works")
     .doc(workID)
@@ -111,8 +129,10 @@ const updateWork = async ({
     customer: admin.firestore().doc(`customers/${customer}`),
     images: [],
   };
-  if (!isEmpty(dateEnd)) {
+  if (typeof dateEnd !== "undefined") {
     body.dateEnd = admin.firestore.Timestamp.fromDate(new Date(dateEnd));
+  } else {
+    body.dateEnd = null;
   }
   const db = admin.firestore();
   const storage = admin.storage();

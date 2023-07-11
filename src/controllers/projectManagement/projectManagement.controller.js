@@ -68,7 +68,7 @@ async function addWorkController(httpRequest) {
   return {
     statusCode: 200,
     body: {
-      messasge: "success",
+      message: "success",
     },
   };
 }
@@ -79,7 +79,7 @@ async function deleteWorkController(httpRequest) {
   return {
     statusCode: 200,
     body: {
-      messasge: "success",
+      message: "success",
     },
   };
 }
@@ -90,7 +90,7 @@ async function updateWorkController(httpRequest) {
   return {
     statusCode: 200,
     body: {
-      messasge: "success",
+      message: "success",
     },
   };
 }

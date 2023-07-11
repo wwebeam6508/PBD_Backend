@@ -10,12 +10,12 @@ const options = {
 function validateAddWork(httpRequest) {
   const schema = Joi.object({
     title: Joi.string().min(4).max(100).required(),
-    detail: Joi.string(),
+    detail: Joi.string().optional().allow(""),
     date: Joi.date().required(),
     profit: Joi.number().required(),
     customer: Joi.string().required(),
-    dateEnd: Joi.date(),
-    images: Joi.array(),
+    dateEnd: Joi.date().optional(),
+    images: Joi.array().optional(),
   });
   return schema.validate(httpRequest.body, options);
 }
@@ -24,13 +24,13 @@ function validateUpdateWork(httpRequest) {
   const schema = Joi.object({
     workID: Joi.string().required(),
     title: Joi.string().min(4).max(100),
-    detail: Joi.string(),
+    detail: Joi.string().optional().allow(""),
     date: Joi.date(),
     profit: Joi.number(),
     customer: Joi.string(),
-    dateEnd: Joi.date(),
-    imagesAdd: Joi.array(),
-    imagesDelete: Joi.array(),
+    dateEnd: Joi.date().optional(),
+    imagesAdd: Joi.array().optional(),
+    imagesDelete: Joi.array().optional(),
   });
   return schema.validate(httpRequest.body, options);
 }
