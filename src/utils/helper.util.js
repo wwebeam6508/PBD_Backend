@@ -87,7 +87,7 @@ const conditionEmptyฺBody = (body) => {
 }
 
 const uploadFiletoStorage = (image, path, filename) => {
-  return new Promise(async (resolve, reject) => {
+  return new Promise( (resolve, reject) => {
     const uid = uuid()
     const bucket = admin.storage().bucket()
     const file = bucket.file(`${path}/${filename}.jpg`);

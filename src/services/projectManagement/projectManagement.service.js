@@ -1,10 +1,6 @@
 import admin from "firebase-admin";
 import { BadRequestError } from "../../utils/api-errors.js";
-import {
-  isEmpty,
-  randomString,
-  uploadFiletoStorage,
-} from "../../utils/helper.util.js";
+import { uploadFiletoStorage } from "../../utils/helper.util.js";
 import env from "../../configs/firebase.config.js";
 
 const getWorks = async ({ page = 1, pageSize = 2, sortTitle, sortType }) => {
@@ -17,12 +13,21 @@ const getWorks = async ({ page = 1, pageSize = 2, sortTitle, sortType }) => {
       .limit(pageSize)
       .offset(offset)
       .get();
-    return workQuery.docs.map((res) => {
-      return {
-        projectID: res.id,
-        ...res.data(),
-      };
-    });
+    const result = await Promise.all(
+      workQuery.docs.map(async (res) => {
+        console.log(res.data().customer);
+        return {
+          projectID: res.id,
+          ...res.data(),
+          //check customer type ref or string
+          customer:
+            typeof res.data().customer === "string"
+              ? res.data().customer
+              : (await res.data().customer.get()).data().name,
+        };
+      })
+    );
+    return result;
   } catch (error) {
     throw new BadRequestError(error.message);
   }
@@ -36,8 +41,12 @@ const getWorksByID = async ({ workID }) => {
     let result = {
       ...workQuery.data(),
       projectID: workQuery.id,
-      customer: (await workQuery.data().customer.get()).id,
+      customer:
+        typeof workQuery.data().customer === "string"
+          ? workQuery.data().customer
+          : (await workQuery.data().customer.get()).id,
     };
+    result.isCustomerRef = typeof workQuery.data().customer === "object";
     return result;
   } catch (error) {
     throw new BadRequestError(error.message);
@@ -51,13 +60,16 @@ const addWork = async ({
   profit = 0,
   images = [],
   customer,
+  isCustomerRef,
 }) => {
   const firstAdd = {
     title,
     date: admin.firestore.Timestamp.fromDate(date),
     detail,
     profit,
-    customer: admin.firestore().doc(`customers/${customer}`),
+    customer: isCustomerRef
+      ? admin.firestore().doc(`customers/${customer}`)
+      : customer,
   };
   const db = admin.firestore();
   await db
@@ -118,6 +130,7 @@ const updateWork = async ({
   detail = "",
   profit = 0,
   customer,
+  isCustomerRef,
   imagesDelete = [],
   imagesAdd = [],
 }) => {
@@ -126,7 +139,9 @@ const updateWork = async ({
     date: admin.firestore.Timestamp.fromDate(date),
     detail,
     profit,
-    customer: admin.firestore().doc(`customers/${customer}`),
+    customer: isCustomerRef
+      ? admin.firestore().doc(`customers/${customer}`)
+      : customer,
     images: [],
   };
   if (typeof dateEnd !== "undefined") {

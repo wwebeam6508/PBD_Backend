@@ -36,13 +36,12 @@ const getAboutUsDetailData = async () => {
 };
 
 const updateHomeDetailData = async (body) => {
-  return new Promise(async (resolve, reject) => {
+  return new Promise((resolve) => {
     try {
       let data = conditionEmptyฺBody(body);
-      data = await uploadStorage(data, "home");
+      data = uploadStorage(data, "home");
       const db = admin.firestore();
-      await db
-        .doc("home/detail")
+      db.doc("home/detail")
         .update(data)
         .catch((error) => {
           throw new BadRequestError(error.message);
@@ -55,13 +54,12 @@ const updateHomeDetailData = async (body) => {
 };
 
 const updateAboutUsDetailData = async (body) => {
-  return new Promise(async (resolve, reject) => {
+  return new Promise((resolve) => {
     try {
       let data = conditionEmptyฺBody(body);
-      data = await uploadStorage(data, "about");
+      data = uploadStorage(data, "about");
       const db = admin.firestore();
-      await db
-        .doc("about/detail")
+      db.doc("about/detail")
         .update(data)
         .catch((error) => {
           throw new BadRequestError(error.message);
@@ -74,7 +72,7 @@ const updateAboutUsDetailData = async (body) => {
 };
 
 const updateContactUsDetailData = async (body) => {
-  return new Promise(async (resolve, reject) => {
+  return new Promise((resolve) => {
     try {
       let data = conditionEmptyฺBody(body);
       if (data.geolocation) {
@@ -83,10 +81,9 @@ const updateContactUsDetailData = async (body) => {
           data.geolocation._longitude
         );
       }
-      data = await uploadStorage(data, "contactUs");
+      data = uploadStorage(data, "contactUs");
       const db = admin.firestore();
-      await db
-        .doc("contactUs/detail")
+      db.doc("contactUs/detail")
         .update(data)
         .catch((error) => {
           throw new BadRequestError(error.message);

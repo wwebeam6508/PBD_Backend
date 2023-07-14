@@ -16,28 +16,26 @@ async function getWorkPaginationController(httpRequest) {
   const sortType = query.sortType ? query.sortType : "desc";
   const allWorksCount = await getAllWorksCount();
   const pages = pageArray(allWorksCount, pageSize, query.page, 5);
-  const workDoc = await Promise.all(
-    (
-      await getWorks({
-        page: query.page,
-        pageSize: pageSize,
-        sortTitle: sortTitle,
-        sortType: sortType,
-      })
-    ).map(async (res) => {
-      let passData = {
-        title: res.title,
-        customer: (await res.customer.get()).data().name,
-        date: new Date(res.date._seconds * 1000),
-        profit: res.profit ? res.profit : 0,
-        projectID: res.projectID,
-      };
-      if (res.dateEnd) {
-        passData.dateEnd = new Date(res.dateEnd._seconds * 1000);
-      }
-      return passData;
+  const workDoc = (
+    await getWorks({
+      page: query.page,
+      pageSize: pageSize,
+      sortTitle: sortTitle,
+      sortType: sortType,
     })
-  );
+  ).map((res) => {
+    let passData = {
+      title: res.title,
+      date: new Date(res.date._seconds * 1000),
+      profit: res.profit ? res.profit : 0,
+      projectID: res.projectID,
+      customer: res.customer,
+    };
+    if (res.dateEnd) {
+      passData.dateEnd = new Date(res.dateEnd._seconds * 1000);
+    }
+    return passData;
+  });
   return {
     statusCode: 200,
     body: {
