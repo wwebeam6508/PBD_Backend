@@ -15,7 +15,6 @@ const getWorks = async ({ page = 1, pageSize = 2, sortTitle, sortType }) => {
       .get();
     const result = await Promise.all(
       workQuery.docs.map(async (res) => {
-        console.log(res.data().customer);
         return {
           projectID: res.id,
           ...res.data(),
