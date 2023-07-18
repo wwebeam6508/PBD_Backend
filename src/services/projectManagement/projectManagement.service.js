@@ -55,6 +55,7 @@ const getWorksByID = async ({ workID }) => {
 const addWork = async ({
   title,
   date = new Date(date),
+  dateEnd,
   detail = "",
   profit = 0,
   images = [],
@@ -66,6 +67,7 @@ const addWork = async ({
     date: admin.firestore.Timestamp.fromDate(date),
     detail,
     profit,
+    dateEnd: dateEnd ? admin.firestore.Timestamp.fromDate(dateEnd) : null,
     customer: isCustomerRef
       ? admin.firestore().doc(`customers/${customer}`)
       : customer,
