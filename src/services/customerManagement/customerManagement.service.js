@@ -85,9 +85,18 @@ const updateCustomer = async ({
       name,
       address,
       taxID,
-      phones: admin.firestore.FieldValue.arrayUnion(...addPhones),
-      emails: admin.firestore.FieldValue.arrayUnion(...addEmails),
     });
+
+    if (addPhones.length > 0) {
+      await snapshot.update({
+        phones: admin.firestore.FieldValue.arrayUnion(...addPhones),
+      });
+    }
+    if (addEmails.length > 0) {
+      await snapshot.update({
+        emails: admin.firestore.FieldValue.arrayUnion(...addEmails),
+      });
+    }
 
     if (removePhones.length > 0) {
       await snapshot.update({

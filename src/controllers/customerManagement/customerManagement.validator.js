@@ -24,10 +24,10 @@ function validateUpdateCustomer(httpRequest) {
     name: Joi.string().min(4).max(100).optional(),
     address: Joi.string().optional(),
     taxID: Joi.string().optional(),
-    addPhones: Joi.array().optional(),
-    addEmails: Joi.array().optional(),
-    removePhones: Joi.array().optional(),
-    removeEmails: Joi.array().optional(),
+    addPhones: Joi.array(),
+    addEmails: Joi.array(),
+    removePhones: Joi.array(),
+    removeEmails: Joi.array(),
   });
   return schema.validate(httpRequest.body, options);
 }

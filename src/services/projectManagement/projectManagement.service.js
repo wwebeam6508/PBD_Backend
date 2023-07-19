@@ -143,7 +143,6 @@ const updateWork = async ({
     customer: isCustomerRef
       ? admin.firestore().doc(`customers/${customer}`)
       : customer,
-    images: [],
   };
   if (typeof dateEnd !== "undefined") {
     body.dateEnd = admin.firestore.Timestamp.fromDate(new Date(dateEnd));
@@ -152,6 +151,16 @@ const updateWork = async ({
   }
   const db = admin.firestore();
   const storage = admin.storage();
+
+  await db
+    .collection("works")
+    .doc(workID)
+    .update({
+      ...body,
+    })
+    .catch((error) => {
+      throw new BadRequestError(error.message);
+    });
 
   if (imagesDelete.length > 0) {
     //delete file in storage by url
@@ -168,34 +177,34 @@ const updateWork = async ({
     }
     //delete url in database
     try {
-      const oldImages = await db
+      await db
         .collection("works")
         .doc(workID)
-        .get()
-        .then((res) => {
-          return res.data().images;
+        .update({
+          //array remove
+          images: admin.firestore.FieldValue.arrayRemove(...imagesDelete),
         });
-      const newImages = oldImages.filter(
-        (image) => !imagesDelete.includes(image)
-      );
-      body.images = newImages;
     } catch (error) {
       throw new BadRequestError(error.message);
     }
   }
 
+  let imagetoAdd = [];
   if (imagesAdd.length > 0) {
     //add file in storage by url
     const urlData = await uploadStorageForProjects(imagesAdd, "works", workID);
-    body.images = [...body.images, ...urlData];
+    imagetoAdd = [...urlData];
+    await db
+      .collection("works")
+      .doc(workID)
+      .update({
+        //array union
+        images: admin.firestore.FieldValue.arrayUnion(...imagetoAdd),
+      })
+      .catch((error) => {
+        throw new BadRequestError(error.message);
+      });
   }
-  await db
-    .collection("works")
-    .doc(workID)
-    .update(body)
-    .catch((error) => {
-      throw new BadRequestError(error.message);
-    });
 };
 
 function getPathStorageFromUrl(url) {

@@ -24,15 +24,15 @@ function validateAddWork(httpRequest) {
 function validateUpdateWork(httpRequest) {
   const schema = Joi.object({
     workID: Joi.string().required(),
-    title: Joi.string().min(4).max(100),
+    title: Joi.string().min(4).max(100).optional(),
     detail: Joi.string().optional().allow(""),
-    date: Joi.date(),
-    profit: Joi.number(),
+    date: Joi.date().optional(),
+    profit: Joi.number().optional(),
     customer: Joi.string(),
     dateEnd: Joi.date().optional(),
     imagesAdd: Joi.array().optional(),
     imagesDelete: Joi.array().optional(),
-    isCustomerRef: Joi.boolean(),
+    isCustomerRef: Joi.boolean().optional(),
   });
   return schema.validate(httpRequest.body, options);
 }
