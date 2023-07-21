@@ -95,6 +95,23 @@ const addWork = async ({
 };
 
 const deleteWork = async ({ workID }) => {
+  // check if project has any expenses in reference
+  const expenseData = await db
+    .collection("expenses")
+    .where("workRef", "==", db.doc(`works/${workID}`))
+    .get();
+  if (expenseData.size > 0) {
+    const nameOfExpenses = expenseData.docs.map((res) => res.data().title);
+    let listMessage = "";
+    nameOfExpenses.forEach((name) => {
+      listMessage += `${name}, `;
+    });
+    listMessage = listMessage.substring(0, listMessage.length - 2);
+
+    throw new BadRequestError(
+      `ไม่สามารถลบงานได้เนื่องจากมีรายการค่าใช้จ่ายที่อ้างอิงถึงงานนี้ โดยมีรายการค่าใช้จ่ายดังนี้ ${listMessage}`
+    );
+  }
   const db = admin.firestore();
   //remove images in storage
   const workData = await getWorksByID({ workID });
@@ -113,7 +130,8 @@ const deleteWork = async ({ workID }) => {
       })
     );
   }
-  //remove work in database
+
+  //delete project
   await db
     .collection("works")
     .doc(workID)

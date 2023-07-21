@@ -89,14 +89,22 @@ const updateExpense = async ({
       totalPrice,
       workRef: workRef ? admin.firestore().doc(`works/${workRef}`) : null,
       detail,
-      lists: admin.firestore.FieldValue.arrayUnion(...addLists),
-      prices: admin.firestore.FieldValue.arrayUnion(...addPrices),
     };
 
     const db = admin.firestore();
     const snapshot = db.collection("expenses").doc(expenseID);
     const expenseQuery = await snapshot.update(passData);
 
+    if (addLists.length > 0) {
+      await snapshot.update({
+        lists: admin.firestore.FieldValue.arrayUnion(...addLists),
+      });
+    }
+    if (addPrices.length > 0) {
+      await snapshot.update({
+        prices: admin.firestore.FieldValue.arrayUnion(...addPrices),
+      });
+    }
     if (removeLists.length > 0) {
       await snapshot.update({
         lists: admin.firestore.FieldValue.arrayRemove(...removeLists),

@@ -1,41 +1,46 @@
-import admin from 'firebase-admin'
-import { uuid } from 'uuidv4'
-import bcrypt from 'bcrypt'
+import admin from "firebase-admin";
+import { uuid } from "uuidv4";
+import bcrypt from "bcrypt";
 function getOffset(currentPage = 1, listPerPage) {
-  return (currentPage - 1) * [listPerPage]
+  return (currentPage - 1) * [listPerPage];
 }
 
 function emptyOrRows(rows) {
   if (!rows) {
-    return []
+    return [];
   }
-  return rows
+  return rows;
 }
 
 function pageArray(totalSize, pageSize, page, maxLength) {
-  const currentPage = Number(page)
-  const current_position = Math.floor(maxLength / 2)
-  const totalPage = Math.ceil(totalSize / pageSize)
+  const currentPage = Number(page);
+  const current_position = Math.floor(maxLength / 2);
+  const totalPage = Math.ceil(totalSize / pageSize);
 
-  const startPoint = currentPage - current_position >= 1 ? currentPage - current_position : 1
-  const endPoint = currentPage + current_position <= totalPage ? currentPage + current_position : totalPage
-  let pages = []
+  const startPoint =
+    currentPage - current_position >= 1 ? currentPage - current_position : 1;
+  const endPoint =
+    currentPage + current_position <= totalPage
+      ? currentPage + current_position
+      : totalPage;
+  let pages = [];
   if (startPoint !== 1) {
-    pages.push("...")
+    pages.push("...");
   }
   for (let i = startPoint; i <= endPoint; i++) {
-    pages.push(i)
+    pages.push(i);
   }
   if (endPoint !== totalPage) {
-    pages.push("...")
+    pages.push("...");
   }
-  return pages
+  return pages;
 }
 
 //function with random unique id string
 function randomString(length) {
-  var result = '';
-  var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  var result = "";
+  var characters =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   var charactersLength = characters.length;
   for (var i = 0; i < length; i++) {
     result += characters.charAt(Math.floor(Math.random() * charactersLength));
@@ -44,79 +49,80 @@ function randomString(length) {
 }
 
 function isEmpty(str) {
-  if (typeof str === 'string' || typeof str === 'number') {
-    return (!str || /^\s*$/.test(str))
+  if (typeof str === "string" || typeof str === "number") {
+    return !str || /^\s*$/.test(str);
   }
-  return true
+  return true;
 }
 
 function checkIsAganistItSelf(requesterID, userid) {
   if (requesterID === userid) {
-    return true
+    return true;
   }
-  return false
+  return false;
 }
 const checkIsGodAdmin = async (id) => {
-  const db = admin.firestore()
-  const response = await db.doc(`users/${id}`).get()
-  if (response.data().userTypeID === 'GOD') {
-    return true
+  const db = admin.firestore();
+  const response = await db.doc(`users/${id}`).get();
+  if (response.data().userTypeID === "GOD") {
+    return true;
   }
-  return false
-}
+  return false;
+};
 
 const conditionEmptyฺBody = (body) => {
-  let data = {}
+  let data = {};
   for (const key in body) {
     if (Array.isArray(body[key])) {
-      let array = []
+      let array = [];
       for (let i = 0; i < body[key].length; i++) {
-        array.push(conditionEmptyฺBody(body[key][i]))
+        array.push(conditionEmptyฺBody(body[key][i]));
       }
-      data[key] = array
-    }
-    else if (typeof body[key] === 'object') {
-      data[key] = conditionEmptyฺBody(body[key])
+      data[key] = array;
+    } else if (typeof body[key] === "object") {
+      data[key] = conditionEmptyฺBody(body[key]);
     } else {
       if (!isEmpty(body[key])) {
-        data[key] = body[key]
+        data[key] = body[key];
       }
     }
   }
-  return data
-}
+  return data;
+};
 
 const uploadFiletoStorage = (image, path, filename) => {
-  return new Promise( (resolve, reject) => {
-    const uid = uuid()
-    const bucket = admin.storage().bucket()
+  return new Promise((resolve, reject) => {
+    const uid = uuid();
+    const bucket = admin.storage().bucket();
     const file = bucket.file(`${path}/${filename}.jpg`);
     const blobStream = file.createWriteStream({
       metadata: {
-        contentType: 'image/jpeg',
+        contentType: "image/jpeg",
         metadata: {
-          firebaseStorageDownloadTokens: uid
-        }
+          firebaseStorageDownloadTokens: uid,
+        },
       },
       resumable: true,
       public: true,
-      validation: 'md5'
+      validation: "md5",
     });
-    blobStream.on('error', (error) => {
+    blobStream.on("error", (error) => {
       reject(error);
     });
-    blobStream.on('finish', () => {
-      const publicUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(file.name)}?alt=media&token=${uid}`
-      resolve(publicUrl)
-    })
-    blobStream.end(Buffer(image.split(';base64,')[1], 'base64'));
-  })
-}
+    blobStream.on("finish", () => {
+      const publicUrl = `https://firebasestorage.googleapis.com/v0/b/${
+        bucket.name
+      }/o/${encodeURIComponent(file.name)}?alt=media&token=${uid}`;
+      resolve(publicUrl);
+    });
+    blobStream.end(Buffer(image.split(";base64,")[1], "base64"));
+  });
+};
 const encryptPassword = async (password) => {
-  const salt = await bcrypt.genSalt(10)
-  const hash = await bcrypt.hash(password, salt)
-  return hash
-}
+  const salt = await bcrypt.genSalt(10);
+  const hash = await bcrypt.hash(password, salt);
+  return hash;
+};
 
 export {
   checkIsGodAdmin,
@@ -128,5 +134,5 @@ export {
   getOffset,
   emptyOrRows,
   uploadFiletoStorage,
-  conditionEmptyฺBody
-}
+  conditionEmptyฺBody,
+};

@@ -124,8 +124,18 @@ const deleteCustomer = async ({ customerID }) => {
       .where("customer", "==", admin.firestore().doc(`customers/${customerID}`))
       .get();
     if (customerQuery.docs.length > 0) {
+      //list of customers name
+      let customerName = customerQuery.docs.map((res) => {
+        return res.data().title;
+      });
+      let messageList = "";
+      customerName.forEach((res) => {
+        messageList += `{${res}}, `;
+      });
+      messageList = messageList.slice(0, -2);
+
       throw new BadRequestError(
-        "บริษัทหรือลูกค้ามีรายชื่ออยู่ในระบบ ไม่สามารถลบได้"
+        `ไม่สามารถลบได้เนื่องจากมีโปรเจค ${messageList} อยู่ในระบบ`
       );
     }
     await db.collection("customers").doc(customerID).delete();

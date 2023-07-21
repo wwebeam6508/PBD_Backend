@@ -26,7 +26,7 @@ async function getExpensesPaginationController(httpRequest) {
   });
   return {
     statusCode: 200,
-    body: {
+    body: { 
       currentPage: query.page,
       pages: pages,
       data: expenseDoc,
