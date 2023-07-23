@@ -8,13 +8,13 @@ const getWorks = async ({ page = 1, pageSize = 2, sortTitle, sortType }) => {
     const offset = pageSize * (page - 1);
     const db = admin.firestore();
     const snapshot = db.collection("works");
-    const workQuery = await snapshot
-      .orderBy(sortTitle, sortType)
-      .limit(pageSize)
-      .offset(offset)
-      .get();
+    let workQuery = snapshot.limit(pageSize).offset(offset);
+    if (sortTitle && sortType) {
+      workQuery = workQuery.orderBy(sortTitle, sortType);
+    }
+    const total = await workQuery.get();
     const result = await Promise.all(
-      workQuery.docs.map(async (res) => {
+      total.docs.map(async (res) => {
         return {
           projectID: res.id,
           ...res.data(),

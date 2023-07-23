@@ -11,9 +11,9 @@ const getCustomers = async ({
     const offset = pageSize * (page - 1);
     const db = admin.firestore();
     const snapshot = db.collection("customers");
-    const customerQuery = snapshot.limit(pageSize).offset(offset);
+    let customerQuery = snapshot.limit(pageSize).offset(offset);
     if (sortTitle && sortType) {
-      customerQuery.orderBy(sortTitle, sortType);
+      customerQuery = customerQuery.orderBy(sortTitle, sortType);
     }
     const total = await customerQuery.get();
     const result = await Promise.all(

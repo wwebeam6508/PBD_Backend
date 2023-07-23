@@ -1,3 +1,12 @@
+import {
+  addExpense,
+  deleteExpense,
+  getExpenseByID,
+  getExpenses,
+  getExpensesCount,
+  getWorksTitle,
+  updateExpense,
+} from "../../services/expenseManagement/expenseManagement.service.js";
 import { pageArray } from "../../utils/helper.util.js";
 
 async function getExpensesPaginationController(httpRequest) {
@@ -5,7 +14,7 @@ async function getExpensesPaginationController(httpRequest) {
   const pageSize = query.pageSize ? Number(query.pageSize) : 10;
   const sortTitle = query.sortTitle ? query.sortTitle : "date";
   const sortType = query.sortType ? query.sortType : "desc";
-  const allExpensesCount = await getAllExpensesCount();
+  const allExpensesCount = await getExpensesCount();
   const pages = pageArray(allExpensesCount, pageSize, query.page, 5);
   const expenseDoc = (
     await getExpenses({
@@ -15,18 +24,20 @@ async function getExpensesPaginationController(httpRequest) {
       sortType: sortType,
     })
   ).map((res) => {
+    const totalPrice = parseFloat(res.lists.reduce((a, b) => a + b.price, 0));
     let passData = {
       title: res.title,
       date: new Date(res.date._seconds * 1000),
-      totalPrice: res.totalPrice ? res.totalPrice : 0,
+      totalPrice: totalPrice ? totalPrice : 0,
       expenseID: res.expenseID,
       workRef: res.workRef,
+      isVat: res.currentVat > 0 ? true : false,
     };
     return passData;
   });
   return {
     statusCode: 200,
-    body: { 
+    body: {
       currentPage: query.page,
       pages: pages,
       data: expenseDoc,
@@ -38,7 +49,7 @@ async function getExpensesPaginationController(httpRequest) {
 async function getExpenseByIDController(httpRequest) {
   const query = httpRequest.query;
   let expenseDoc = await getExpenseByID({
-    workID: query.workID,
+    expenseID: query.expenseID,
   });
   return {
     statusCode: 200,
@@ -80,11 +91,20 @@ async function updateExpenseController(httpRequest) {
     },
   };
 }
-
+async function getProjectTitleController() {
+  const customerName = await getWorksTitle();
+  return {
+    statusCode: 200,
+    body: {
+      data: customerName,
+    },
+  };
+}
 export {
   getExpenseByIDController as getExpenseByID,
   updateExpenseController as updateExpense,
   addExpenseController as addExpense,
   getExpensesPaginationController as getExpensesPagination,
   deleteExpenseController as deleteExpense,
+  getProjectTitleController as getProjectTitle,
 };

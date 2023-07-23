@@ -6,17 +6,22 @@ const getExpenses = async ({ page = 1, pageSize = 5, sortTitle, sortType }) => {
     const offset = pageSize * (page - 1);
     const db = admin.firestore();
     const snapshot = db.collection("expenses");
-    const expenseQuery = snapshot.limit(pageSize).offset(offset);
+    let expenseQuery = snapshot.limit(pageSize).offset(offset);
     if (sortTitle && sortType) {
-      expenseQuery.orderBy(sortTitle, sortType);
+      expenseQuery = expenseQuery.orderBy(sortTitle, sortType);
     }
     const total = await expenseQuery.get();
     const result = await Promise.all(
       total.docs.map(async (res) => {
+        console.log();
         return {
           expenseID: res.id,
           ...res.data(),
-          workRef: workRef ? (await res.data().workRef.get()).data().title : "",
+          workRef: res.data().workRef
+            ? typeof res.data().workRef === "string"
+              ? ""
+              : (await res.data().workRef.get()).data().title
+            : "",
         };
       })
     );
@@ -34,8 +39,13 @@ const getExpenseByID = async ({ expenseID }) => {
     let result = {
       expenseID: expenseQuery.id,
       ...expenseQuery.data(),
-      workRef: workRef ? (await res.data().workRef.get()).id : null,
+      workRef: expenseQuery.data().workRef
+        ? typeof expenseQuery.data().workRef === "string"
+          ? expenseQuery.data().workRef
+          : (await expenseQuery.data().workRef.get()).id
+        : "",
     };
+    result.isWorkRef = typeof expenseQuery.data().workRef === "object";
     return result;
   } catch (error) {
     throw new BadRequestError(error.message);
@@ -45,21 +55,20 @@ const getExpenseByID = async ({ expenseID }) => {
 const addExpense = async ({
   title,
   date = new Date(date),
-  totalPrice = 0,
   workRef,
   detail,
   lists = [],
-  prices = [],
+  isWorkRef,
+  currentVat,
 }) => {
   try {
     let passData = {
       title,
       date: admin.firestore.Timestamp.fromDate(date),
-      totalPrice,
-      workRef: workRef ? admin.firestore().doc(`works/${workRef}`) : null,
+      workRef: isWorkRef ? admin.firestore().doc(`works/${workRef}`) : "",
       detail,
       lists,
-      prices,
+      currentVat,
     };
     const db = admin.firestore();
     const snapshot = db.collection("expenses");
@@ -74,21 +83,20 @@ const updateExpense = async ({
   expenseID,
   title,
   date = new Date(date),
-  totalPrice = 0,
   workRef,
   detail,
   addLists = [],
-  addPrices = [],
   removeLists = [],
-  removePrices = [],
+  isWorkRef,
+  currentVat = 0,
 }) => {
   try {
     let passData = {
       title,
       date: admin.firestore.Timestamp.fromDate(date),
-      totalPrice,
-      workRef: workRef ? admin.firestore().doc(`works/${workRef}`) : null,
+      workRef: isWorkRef ? admin.firestore().doc(`works/${workRef}`) : "",
       detail,
+      currentVat,
     };
 
     const db = admin.firestore();
@@ -100,19 +108,9 @@ const updateExpense = async ({
         lists: admin.firestore.FieldValue.arrayUnion(...addLists),
       });
     }
-    if (addPrices.length > 0) {
-      await snapshot.update({
-        prices: admin.firestore.FieldValue.arrayUnion(...addPrices),
-      });
-    }
     if (removeLists.length > 0) {
       await snapshot.update({
         lists: admin.firestore.FieldValue.arrayRemove(...removeLists),
-      });
-    }
-    if (removePrices.length > 0) {
-      await snapshot.update({
-        prices: admin.firestore.FieldValue.arrayRemove(...removePrices),
       });
     }
     return expenseQuery.id;

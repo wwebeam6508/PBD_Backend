@@ -4,6 +4,7 @@ import ProjectManagement from "./ProjectManagement.route.js";
 import WebsiteManagement from "./WebsiteManagement.route.js";
 import UserManagement from "./UserManagement.route.js";
 import CustomerManagement from "./CustomerManagment.route.js";
+import ExpenseManagment from "./ExpenseManagment.route.js";
 
 const routes = [
   {
@@ -29,6 +30,10 @@ const routes = [
   {
     path: "/customermanagement",
     route: CustomerManagement,
+  },
+  {
+    path: "/expensemanagement",
+    route: ExpenseManagment,
   },
 ];
 
