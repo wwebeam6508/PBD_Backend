@@ -11,8 +11,8 @@ import { pageArray } from "../../utils/helper.util.js";
 async function getCustomersPaginationController(httpRequest) {
   const query = httpRequest.query;
   const pageSize = query.pageSize ? Number(query.pageSize) : 10;
-  const sortTitle = query.sortTitle ? query.sortTitle : "date";
-  const sortType = query.sortType ? query.sortType : "desc";
+  const sortTitle = query.sortTitle;
+  const sortType = query.sortType;
   const allCostomerCount = await getCustomersCount();
   const pages = pageArray(allCostomerCount, pageSize, query.page, 5);
   const customerDoc = (

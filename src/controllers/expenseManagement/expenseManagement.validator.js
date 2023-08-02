@@ -15,7 +15,6 @@ function validateAddExpense(httpRequest) {
     date: Joi.date().required(),
     currentVat: Joi.number().required(),
     workRef: Joi.string().optional(),
-    currentVat: Joi.number().required(),
     isWorkRef: Joi.boolean().required(),
   });
   return schema.validate(httpRequest.body, options);
