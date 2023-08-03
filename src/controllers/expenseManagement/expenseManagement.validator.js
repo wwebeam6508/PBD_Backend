@@ -11,10 +11,10 @@ function validateAddExpense(httpRequest) {
   const schema = Joi.object({
     title: Joi.string().min(4).max(500).required(),
     lists: Joi.array().items(Joi.object().required()).optional(),
-    detail: Joi.string().min(4).optional(),
+    detail: Joi.string().optional().allow(""),
     date: Joi.date().required(),
     currentVat: Joi.number().required(),
-    workRef: Joi.string().optional(),
+    workRef: Joi.string().optional().allow(""),
     isWorkRef: Joi.boolean().required(),
   });
   return schema.validate(httpRequest.body, options);
@@ -24,12 +24,12 @@ function validateUpdateExpense(httpRequest) {
   const schema = Joi.object({
     expenseID: Joi.string().required(),
     title: Joi.string().min(4).max(500).optional(),
-    detail: Joi.string().min(4).optional(),
+    detail: Joi.string().optional().allow(""),
     date: Joi.date().optional(),
-    workRef: Joi.string().optional(),
-    addLists: Joi.array().items(Joi.object().required()).optional(),
-    currentVat: Joi.number().optional(),
+    workRef: Joi.string().optional().allow(""),
+    addLists: Joi.array().optional(),
     removeLists: Joi.array().optional(),
+    currentVat: Joi.number().optional(),
     isWorkRef: Joi.boolean().optional(),
   });
   return schema.validate(httpRequest.body, options);

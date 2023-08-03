@@ -109,6 +109,7 @@ const updateExpense = async ({
       });
     }
     if (removeLists.length > 0) {
+      console.log(removeLists);
       await snapshot.update({
         lists: admin.firestore.FieldValue.arrayRemove(...removeLists),
       });
