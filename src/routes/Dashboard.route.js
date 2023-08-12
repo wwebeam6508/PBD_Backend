@@ -6,9 +6,12 @@ import makeValidatorCallback from "../middleware/validator-callback.js";
 import Authentication from "../middleware/authentication.js";
 
 import {
+  getDashboard,
   getEarnAndSpendEachYear,
   getTotalEarn,
   getTotalExpense,
+  getTotalWork,
+  getTotalWorkUnfinished,
   getYearsReport,
 } from "../controllers/dashboard/dashboard.controller.js";
 
@@ -43,6 +46,24 @@ router.get(
   "/getYearsReport",
   Authentication(),
   makeExpressCallback(getYearsReport)
+);
+
+router.get(
+  "/getTotalWork",
+  Authentication(),
+  makeExpressCallback(getTotalWork)
+);
+
+router.get(
+  "/getTotalWorkUnfinished",
+  Authentication(),
+  makeExpressCallback(getTotalWorkUnfinished)
+);
+
+router.get(
+  "/getDashboard",
+  Authentication(),
+  makeExpressCallback(getDashboard)
 );
 
 export default router;
