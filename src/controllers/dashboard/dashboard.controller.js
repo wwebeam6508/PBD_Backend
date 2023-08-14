@@ -7,23 +7,69 @@ import {
   getWorkCustomer,
   getYearsReport,
 } from "../../services/dashboard/dashboard.service.js";
+import caching from "../../utils/caching.js";
 
 async function getDashboardController() {
   //get each function
-  const workCustomer = await getWorkCustomer();
+  const currentYear = new Date().getFullYear();
+  const cacheKeys = {
+    spentAndEarnEachMonth: `spentAndEarnEachMonth-${currentYear}`,
+    yearsReport: `yearsReport`,
+    totalEarn: `totalEarn-`,
+    totalExpense: `totalExpense-`,
+    totalWork: `totalWork-`,
+    totalWorkUnfinished: `totalWorkUnfinished-`,
+    customerWork: `customerWork`,
+  };
 
-  const data = {
-    spentAndEarnEachMonth: await getSpentAndEarnEachMonth(
-      new Date().getFullYear()
+  //get data from cache
+  const cacheData = {
+    spentAndEarnEachMonth: caching.getFromCache(
+      cacheKeys.spentAndEarnEachMonth
     ),
-    yearsReport: await getYearsReport(),
-    totalEarn: await getTotalEarn(),
-    totalExpense: await getTotalExpense(),
-    totalWork: await getTotalWork(),
-    totalWorkUnfinished: await getTotalWorkUnfinished(),
+    yearsReport: caching.getFromCache(cacheKeys.yearsReport),
+    totalEarn: caching.getFromCache(cacheKeys.totalEarn),
+    totalExpense: caching.getFromCache(cacheKeys.totalExpense),
+    totalWork: caching.getFromCache(cacheKeys.totalWork),
+    totalWorkUnfinished: caching.getFromCache(cacheKeys.totalWorkUnfinished),
+    workCustomer: caching.getFromCache(cacheKeys.customerWork),
+  };
+  console.log(cacheData);
+
+  const workCustomer = cacheData.workCustomer
+    ? cacheData.workCustomer
+    : await getWorkCustomer();
+  const data = {
+    spentAndEarnEachMonth: cacheData.spentAndEarnEachMonth
+      ? cacheData.spentAndEarnEachMonth
+      : await getSpentAndEarnEachMonth(currentYear),
+    yearsReport: cacheData.yearsReport
+      ? cacheData.yearsReport
+      : await getYearsReport(),
+    totalEarn: cacheData.totalEarn ? cacheData.totalEarn : await getTotalEarn(),
+    totalExpense: cacheData.totalExpense
+      ? cacheData.totalExpense
+      : await getTotalExpense(),
+    totalWork: cacheData.totalWork ? cacheData.totalWork : await getTotalWork(),
+    totalWorkUnfinished: cacheData.totalWorkUnfinished
+      ? cacheData.totalWorkUnfinished
+      : await getTotalWorkUnfinished(),
     customerWorkRatio: workCustomer.customers,
     customerProfitRatio: workCustomer.customerMoney,
   };
+
+  //check if cache is empty then set cache by forloop key from cacheKeys
+  for (const key in cacheData) {
+    if (!cacheData[key]) {
+      if (data[key] != (null || undefined)) {
+        caching.setCache(cacheKeys[key], data[key], 60 * 60);
+      }
+    }
+  }
+  if (!cacheData.workCustomer) {
+    caching.setCache(cacheKeys.customerWork, workCustomer);
+  }
+
   return {
     statusCode: 200,
     body: {
