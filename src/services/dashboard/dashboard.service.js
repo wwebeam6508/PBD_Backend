@@ -206,6 +206,7 @@ const getTotalWorkUnfinished = async (year) => {
           .where("date", "<=", endTimestamp)
           // dateEnd is null or non exist
           .where("dateEnd", "==", null)
+          
           .get()
       : await db.collection("works").where("dateEnd", "==", null).get();
 
