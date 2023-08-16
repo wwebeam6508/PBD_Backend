@@ -2,9 +2,7 @@ import {
   getSpentAndEarnEachMonth,
   getTotalEarn,
   getTotalExpense,
-  getTotalWork,
-  getTotalWorkUnfinished,
-  getWorkCustomer,
+  getTotalWorkAndCustomer,
   getYearsReport,
 } from "../../services/dashboard/dashboard.service.js";
 import caching from "../../utils/caching.js";
@@ -17,9 +15,7 @@ async function getDashboardController() {
     yearsReport: `yearsReport`,
     totalEarn: `totalEarn-`,
     totalExpense: `totalExpense-`,
-    totalWork: `totalWork-`,
-    totalWorkUnfinished: `totalWorkUnfinished-`,
-    customerWork: `customerWork`,
+    totalWorkAndCustomer: `totalWorkAndCustomer`,
   };
 
   //get data from cache
@@ -30,15 +26,12 @@ async function getDashboardController() {
     yearsReport: caching.getFromCache(cacheKeys.yearsReport),
     totalEarn: caching.getFromCache(cacheKeys.totalEarn),
     totalExpense: caching.getFromCache(cacheKeys.totalExpense),
-    totalWork: caching.getFromCache(cacheKeys.totalWork),
-    totalWorkUnfinished: caching.getFromCache(cacheKeys.totalWorkUnfinished),
-    workCustomer: caching.getFromCache(cacheKeys.customerWork),
+    totalWorkAndCustomer: caching.getFromCache(cacheKeys.totalWorkAndCustomer),
   };
-  console.log(cacheData);
 
-  const workCustomer = cacheData.workCustomer
-    ? cacheData.workCustomer
-    : await getWorkCustomer();
+  const totalWorkAndCustomer = cacheData.totalWorkAndCustomer
+    ? cacheData.totalWorkAndCustomer
+    : await getTotalWorkAndCustomer();
   const data = {
     spentAndEarnEachMonth: cacheData.spentAndEarnEachMonth
       ? cacheData.spentAndEarnEachMonth
@@ -50,12 +43,10 @@ async function getDashboardController() {
     totalExpense: cacheData.totalExpense
       ? cacheData.totalExpense
       : await getTotalExpense(),
-    totalWork: cacheData.totalWork ? cacheData.totalWork : await getTotalWork(),
-    totalWorkUnfinished: cacheData.totalWorkUnfinished
-      ? cacheData.totalWorkUnfinished
-      : await getTotalWorkUnfinished(),
-    customerWorkRatio: workCustomer.customers,
-    customerProfitRatio: workCustomer.customerMoney,
+    totalWork: totalWorkAndCustomer.totalWorks.totalWork,
+    totalWorkUnfinished: totalWorkAndCustomer.totalWorks.totalWorkUnfinished,
+    customerWorkRatio: totalWorkAndCustomer.workCustomer.customers,
+    customerProfitRatio: totalWorkAndCustomer.workCustomer.customerMoney,
   };
 
   //check if cache is empty then set cache by forloop key from cacheKeys
@@ -66,8 +57,8 @@ async function getDashboardController() {
       }
     }
   }
-  if (!cacheData.workCustomer) {
-    caching.setCache(cacheKeys.customerWork, workCustomer);
+  if (!cacheData.totalWorkAndCustomer) {
+    caching.setCache(cacheKeys.totalWorkAndCustomer, totalWorkAndCustomer);
   }
 
   return {

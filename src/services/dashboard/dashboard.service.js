@@ -128,8 +128,43 @@ const getTotalExpense = async (year) => {
 const getYearsReport = async () => {
   try {
     const db = admin.firestore();
-    const worksDoc = await db.collection("works").get();
-    const expensesDoc = await db.collection("expenses").get();
+    // find worksDoc where 4 years ago, current year
+    const worksDoc = await db
+      .collection("works")
+      .where(
+        "date",
+        ">=",
+        admin.firestore.Timestamp.fromDate(
+          new Date(new Date().getFullYear() - 4, 0, 1)
+        )
+      )
+      .where(
+        "date",
+        "<=",
+        admin.firestore.Timestamp.fromDate(
+          new Date(new Date().getFullYear(), 11, 32)
+        )
+      )
+      .get();
+
+    const expensesDoc = await db
+      .collection("expenses")
+      .where(
+        "date",
+        ">=",
+        admin.firestore.Timestamp.fromDate(
+          new Date(new Date().getFullYear() - 4, 0, 1)
+        )
+      )
+      .where(
+        "date",
+        "<=",
+        admin.firestore.Timestamp.fromDate(
+          new Date(new Date().getFullYear(), 11, 32)
+        )
+      )
+      .get();
+
     const years = [];
     worksDoc.forEach((res) => {
       const year = new Date(res.data().date._seconds * 1000).getFullYear();
@@ -163,63 +198,28 @@ const getYearsReport = async () => {
   }
 };
 
-const getTotalWork = async (year) => {
+const getTotalWorks = async (worksDoc) => {
   try {
-    const db = admin.firestore();
-    // find year in firestore timestamp if year is not null if null get all works
-    const start = year ? new Date(year, 0, 1) : null;
-    const end = year ? new Date(year, 11, 32) : null;
-    const startTimestamp = start
-      ? admin.firestore.Timestamp.fromDate(start)
-      : null;
-    const endTimestamp = end ? admin.firestore.Timestamp.fromDate(end) : null;
-    // get all works in year
-    const worksDoc = year
-      ? await db
-          .collection("works")
-          .where("date", ">=", startTimestamp)
-          .where("date", "<=", endTimestamp)
-          .get()
-      : await db.collection("works").get();
+    // find unfinish work by finding if dateEnd is null or undefined
+    let totalWorkUnfinished = 0;
+    worksDoc.forEach((res) => {
+      if (!res.data().dateEnd) {
+        totalWorkUnfinished++;
+      }
+    });
 
-    return worksDoc.size;
+    return {
+      totalWork: worksDoc.size,
+      totalWorkUnfinished: totalWorkUnfinished,
+    };
   } catch (error) {
     throw new BadRequestError(error.message);
   }
 };
 
-const getTotalWorkUnfinished = async (year) => {
+const getWorkCustomer = async (worksDoc) => {
   try {
     const db = admin.firestore();
-    // find year in firestore timestamp if year is not null if null get all works
-    const start = year ? new Date(year, 0, 1) : null;
-    const end = year ? new Date(year, 11, 32) : null;
-    const startTimestamp = start
-      ? admin.firestore.Timestamp.fromDate(start)
-      : null;
-    const endTimestamp = end ? admin.firestore.Timestamp.fromDate(end) : null;
-    // get all works in year
-    const worksDoc = year
-      ? await db
-          .collection("works")
-          .where("date", ">=", startTimestamp)
-          .where("date", "<=", endTimestamp)
-          // dateEnd is null or non exist
-          .where("dateEnd", "==", null)
-          
-          .get()
-      : await db.collection("works").where("dateEnd", "==", null).get();
-
-    return worksDoc.size;
-  } catch (error) {
-    throw new BadRequestError(error.message);
-  }
-};
-
-const getWorkCustomer = async () => {
-  try {
-    const db = admin.firestore();
-    const worksDoc = await db.collection("works").get();
     const customersDoc = await db.collection("customers").get();
     const customers = [];
     const customerMoney = [];
@@ -309,12 +309,38 @@ const getYearsList = async () => {
   }
 };
 
+const getTotalWorkAndCustomer = async (year) => {
+  try {
+    const db = admin.firestore();
+    // find year in firestore timestamp if year is not null if null get all works
+    const start = year ? new Date(year, 0, 1) : null;
+    const end = year ? new Date(year, 11, 32) : null;
+    const startTimestamp = start
+      ? admin.firestore.Timestamp.fromDate(start)
+      : null;
+    const endTimestamp = end ? admin.firestore.Timestamp.fromDate(end) : null;
+    // get all works in year
+    const worksDoc = year
+      ? await db
+          .collection("works")
+          .where("date", ">=", startTimestamp)
+          .where("date", "<=", endTimestamp)
+          .get()
+      : await db.collection("works").get();
+    const data = {
+      totalWorks: await getTotalWorks(worksDoc),
+      workCustomer: await getWorkCustomer(worksDoc),
+    };
+    return data;
+  } catch (error) {
+    throw new BadRequestError(error.message);
+  }
+};
+
 export {
-  getWorkCustomer,
   getSpentAndEarnEachMonth,
   getTotalEarn,
   getTotalExpense,
   getYearsReport,
-  getTotalWork,
-  getTotalWorkUnfinished,
+  getTotalWorkAndCustomer,
 };
