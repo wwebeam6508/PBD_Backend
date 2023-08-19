@@ -8,6 +8,7 @@ import {
   updateWork,
 } from "../../services/projectManagement/projectManagement.service.js";
 import { pageArray } from "../../utils/helper.util.js";
+import caching from "../../utils/caching.js";
 
 async function getWorkPaginationController(httpRequest) {
   const query = httpRequest.query;
@@ -94,7 +95,12 @@ async function updateWorkController(httpRequest) {
 }
 
 async function getCustomerNameController() {
-  const customerName = await getCustomerName();
+  const cacheKey = "customerName";
+  const cacheData = caching.getFromCache(cacheKey);
+  const customerName = cacheData ? cacheData : await getCustomerName();
+  if (!cacheData) {
+    caching.setCache(cacheKey, customerName, 60 * 10);
+  }
   return {
     statusCode: 200,
     body: {

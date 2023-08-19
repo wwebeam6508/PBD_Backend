@@ -1,28 +1,101 @@
+import mongoDB from "../../configs/mongo.config.js";
 import { BadRequestError } from "../../utils/api-errors.js";
 import admin from "firebase-admin";
 
 // get spent and earn each month in current extract as { month , earn , spend}
 const getSpentAndEarnEachMonth = async (year) => {
   try {
-    const db = admin.firestore();
-    // find year in firestore timestamp
-    const start = new Date(year, 0, 1);
-    const end = new Date(year, 11, 32);
-    const startTimestamp = admin.firestore.Timestamp.fromDate(start);
-    const endTimestamp = admin.firestore.Timestamp.fromDate(end);
-    // get all expense in year
-    const expensesDoc = await db
-      .collection("expenses")
-      .where("date", ">=", startTimestamp)
-      .where("date", "<=", endTimestamp)
-      .get();
-    // get all income in year
-    const incomeDoc = await db
-      .collection("works")
-      .where("date", ">=", startTimestamp)
-      .where("date", "<=", endTimestamp)
-      .get();
-    // make array of month
+    // get all works and expenses in year in mongodb
+    const db = await mongoDB();
+    const start = year ? new Date(year, 0, 1) : null;
+    const end = year ? new Date(year, 11, 32) : null;
+    const works = db.collection("works");
+    const expenses = db.collection("expenses");
+    let pipelineWork = [];
+    if (year) {
+      pipelineWork.push({
+        $match: {
+          date: {
+            $gte: start,
+            $lte: end,
+          },
+        },
+      });
+    }
+    // sum of profit in each month fill 0 if no data
+    pipelineWork.push({
+      $group: {
+        _id: {
+          month: { $month: "$date" },
+        },
+        earn: { $sum: "$profit" },
+      },
+    });
+
+    // pipeline.push({
+    //   $lookup: {
+    //     from: "customers", // Replace with the actual collection name of customers
+    //     localField: "customer.$id", // Field in the "works" collection that references the customer
+    //     foreignField: "_id", // Field in the "customers" collection that is referenced
+    //     as: "customer", // Field in the output document that will contain the customer data
+    //   },
+    // });
+
+    const worksRes = await works.aggregate(pipelineWork).toArray();
+
+    let pipelineExpense = [];
+    if (year) {
+      pipelineExpense.push({
+        $match: {
+          date: {
+            $gte: start,
+            $lte: end,
+          },
+        },
+      });
+    }
+    // sum of price in each month fill 0 if no data
+    pipelineExpense.push({
+      $group: {
+        _id: {
+          month: { $month: "$date" },
+        },
+        // find spendWithVat sum of price in each list where currentVat > 0
+        spendWithVat: {
+          $sum: {
+            $reduce: {
+              input: "$lists",
+              initialValue: 0,
+              in: {
+                $cond: [
+                  { $gt: ["$currentVat", 0] },
+                  { $add: ["$$value", "$$this.price"] },
+                  "$$value",
+                ],
+              },
+            },
+          },
+        },
+        // find spendWithOutVat sum of price in each list where currentVat = 0
+        spendWithOutVat: {
+          $sum: {
+            $reduce: {
+              input: "$lists",
+              initialValue: 0,
+              in: {
+                $cond: [
+                  { $eq: ["$currentVat", 0] },
+                  { $add: ["$$value", "$$this.price"] },
+                  "$$value",
+                ],
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const expensesRes = await expenses.aggregate(pipelineExpense).toArray();
 
     const month = [];
     for (let i = 0; i < 12; i++) {
@@ -33,23 +106,16 @@ const getSpentAndEarnEachMonth = async (year) => {
         spendWithOutVat: 0,
       });
     }
-    // add expense to month
-    expensesDoc.forEach((res) => {
-      const monthIndex = new Date(res.data().date._seconds * 1000).getMonth();
-      // find totalPrice in lists
-      let totalPrice = 0;
-      res.data().lists.forEach((list) => {
-        totalPrice += list.price;
-      });
-      res.data().currentVat > 0
-        ? (month[monthIndex].spendWithVat += totalPrice)
-        : (month[monthIndex].spendWithOutVat += totalPrice);
+
+    worksRes.forEach((res) => {
+      month[res._id.month - 1].earn = res.earn;
     });
-    // add income to month
-    incomeDoc.forEach((res) => {
-      const monthIndex = new Date(res.data().date._seconds * 1000).getMonth();
-      month[monthIndex].earn += res.data().profit;
+
+    expensesRes.forEach((res) => {
+      month[res._id.month - 1].spendWithVat = res.spendWithVat;
+      month[res._id.month - 1].spendWithOutVat = res.spendWithOutVat;
     });
+
     return {
       month: month,
       years: await getYearsList(),
@@ -62,29 +128,34 @@ const getSpentAndEarnEachMonth = async (year) => {
 //get total earn from works in whole works
 const getTotalEarn = async (year) => {
   try {
-    const db = admin.firestore();
-    // find year in firestore timestamp if year is not null if null get all works
+    const db = await mongoDB();
+    const works = db.collection("works");
     const start = year ? new Date(year, 0, 1) : null;
     const end = year ? new Date(year, 11, 32) : null;
-    const startTimestamp = start
-      ? admin.firestore.Timestamp.fromDate(start)
-      : null;
-    const endTimestamp = end ? admin.firestore.Timestamp.fromDate(end) : null;
-    // get all works in year
-    const worksDoc = year
-      ? await db
-          .collection("works")
-          .where("date", ">=", startTimestamp)
-          .where("date", "<=", endTimestamp)
-          .get()
-      : await db.collection("works").get();
-    // calculate total earn
-    let totalEarn = 0;
-    worksDoc.forEach((res) => {
-      totalEarn += res.data().profit;
+    let pipeline = [];
+    if (year) {
+      pipeline.push({
+        $match: {
+          date: {
+            $gte: start,
+            $lte: end,
+          },
+        },
+      });
+    }
+    // sum of profit in each list and sum of each month to totalEarn
+    pipeline.push({
+      $group: {
+        _id: null,
+        totalEarn: {
+          $sum: "$profit",
+        },
+      },
     });
 
-    return totalEarn;
+    const worksDoc = await works.aggregate(pipeline).next();
+
+    return worksDoc.totalEarn;
   } catch (error) {
     throw new BadRequestError(error.message);
   }
@@ -92,34 +163,40 @@ const getTotalEarn = async (year) => {
 
 const getTotalExpense = async (year) => {
   try {
-    const db = admin.firestore();
-    // find year in firestore timestamp if year is not null if null get all expenses
+    const db = await mongoDB();
+    const expenses = db.collection("expenses");
     const start = year ? new Date(year, 0, 1) : null;
     const end = year ? new Date(year, 11, 32) : null;
-    const startTimestamp = start
-      ? admin.firestore.Timestamp.fromDate(start)
-      : null;
-    const endTimestamp = end ? admin.firestore.Timestamp.fromDate(end) : null;
-    // get all expenses in year
-    const expensesDoc = year
-      ? await db
-          .collection("expenses")
-          .where("date", ">=", startTimestamp)
-          .where("date", "<=", endTimestamp)
-          .get()
-      : await db.collection("expenses").get();
-    // calculate total expense
-    let totalExpense = 0;
-    expensesDoc.forEach((res) => {
-      // find totalPrice in lists
-      let totalPrice = 0;
-      res.data().lists.forEach((list) => {
-        totalPrice += list.price;
+    let pipeline = [];
+    if (year) {
+      pipeline.push({
+        $match: {
+          date: {
+            $gte: start,
+            $lte: end,
+          },
+        },
       });
-      totalExpense += totalPrice;
+    }
+    // sum of whole price in each list and sum of each month to totalExpense
+    pipeline.push({
+      $group: {
+        _id: null,
+        totalExpense: {
+          $sum: {
+            $reduce: {
+              input: "$lists",
+              initialValue: 0,
+              in: { $add: ["$$value", "$$this.price"] },
+            },
+          },
+        },
+      },
     });
 
-    return totalExpense;
+    const expensesRes = await expenses.aggregate(pipeline).next();
+
+    return expensesRes.totalExpense;
   } catch (error) {
     throw new BadRequestError(error.message);
   }
@@ -127,90 +204,96 @@ const getTotalExpense = async (year) => {
 
 const getYearsReport = async () => {
   try {
-    const db = admin.firestore();
-    // find worksDoc where 4 years ago, current year
-    const worksDoc = await db
-      .collection("works")
-      .where(
-        "date",
-        ">=",
-        admin.firestore.Timestamp.fromDate(
-          new Date(new Date().getFullYear() - 4, 0, 1)
-        )
-      )
-      .where(
-        "date",
-        "<=",
-        admin.firestore.Timestamp.fromDate(
-          new Date(new Date().getFullYear(), 11, 32)
-        )
-      )
-      .get();
+    const db = await mongoDB();
+    const works = db.collection("works");
+    const expenses = db.collection("expenses");
 
-    const expensesDoc = await db
-      .collection("expenses")
-      .where(
-        "date",
-        ">=",
-        admin.firestore.Timestamp.fromDate(
-          new Date(new Date().getFullYear() - 4, 0, 1)
-        )
-      )
-      .where(
-        "date",
-        "<=",
-        admin.firestore.Timestamp.fromDate(
-          new Date(new Date().getFullYear(), 11, 32)
-        )
-      )
-      .get();
+    //find years that have works or expenses in aggregate
+    const pipelineWork = [];
+    // get sum of profit in each year
+    pipelineWork.push({
+      $group: {
+        _id: {
+          year: { $year: "$date" },
+        },
+        totalEarn: {
+          $sum: "$profit",
+        },
+      },
+    });
+    const pipelineExpense = [];
+    // get sum of price in each year
+    pipelineExpense.push({
+      $group: {
+        _id: {
+          year: { $year: "$date" },
+        },
+        totalExpense: {
+          $sum: {
+            $reduce: {
+              input: "$lists",
+              initialValue: 0,
+              in: { $add: ["$$value", "$$this.price"] },
+            },
+          },
+        },
+      },
+    });
 
-    const years = [];
-    worksDoc.forEach((res) => {
-      const year = new Date(res.data().date._seconds * 1000).getFullYear();
-      if (!years.includes(year)) {
-        years.push(year);
-      }
-    });
-    expensesDoc.forEach((res) => {
-      const year = new Date(res.data().date._seconds * 1000).getFullYear();
-      if (!years.includes(year)) {
-        years.push(year);
-      }
-    });
-    //sort year asc
-    years.sort((a, b) => a - b);
-    // get profit and expense in each year
+    const worksRes = await works.aggregate(pipelineWork).toArray();
+    const expensesRes = await expenses.aggregate(pipelineExpense).toArray();
+
     const yearsReport = [];
-    for (let i = 0; i < years.length; i++) {
-      const year = years[i];
-      const totalEarn = await getTotalEarn(year);
-      const totalExpense = await getTotalExpense(year);
+    worksRes.forEach((res) => {
       yearsReport.push({
-        year: String(year),
-        totalEarn: totalEarn,
-        totalExpense: totalExpense,
+        year: res._id.year,
+        totalEarn: res.totalEarn,
+        totalExpense: 0,
       });
-    }
+    });
+    expensesRes.forEach((res) => {
+      const index = yearsReport.findIndex((year) => year.year === res._id.year);
+      if (index !== -1) {
+        yearsReport[index].totalExpense = res.totalExpense;
+      } else {
+        yearsReport.push({
+          year: res._id.year,
+          totalEarn: 0,
+          totalExpense: res.totalExpense,
+        });
+      }
+    });
+    yearsReport.sort((a, b) => a.year - b.year);
+
     return yearsReport;
   } catch (error) {
     throw new BadRequestError(error.message);
   }
 };
 
-const getTotalWorks = async (worksDoc) => {
+const getTotalWorks = async () => {
   try {
-    // find unfinish work by finding if dateEnd is null or undefined
-    let totalWorkUnfinished = 0;
-    worksDoc.forEach((res) => {
-      if (!res.data().dateEnd) {
-        totalWorkUnfinished++;
-      }
+    const db = await mongoDB();
+    const works = db.collection("works");
+    // find total work unfinished
+    let pipeline = [];
+    pipeline.push({
+      $group: {
+        _id: null,
+        totalWorkUnfinished: {
+          $sum: {
+            $cond: [{ $eq: ["$dateEnd", null] }, 1, 0],
+          },
+        },
+        totalWork: {
+          $sum: 1,
+        },
+      },
     });
-
+    const worksDoc = await works.aggregate(pipeline).next();
     return {
-      totalWork: worksDoc.size,
-      totalWorkUnfinished: totalWorkUnfinished,
+      totalWork: worksDoc.totalWork,
+      totalWorkUnfinished: worksDoc.totalWorkUnfinished,
     };
   } catch (error) {
     throw new BadRequestError(error.message);
@@ -219,61 +302,72 @@ const getTotalWorks = async (worksDoc) => {
 
 const getWorkCustomer = async (worksDoc) => {
   try {
-    const db = admin.firestore();
-    const customersDoc = await db.collection("customers").get();
-    const customers = [];
-    const customerMoney = [];
-    customersDoc.forEach((res) => {
-      customers.push({
-        id: res.id,
-        name: res.data().name,
-      });
+    const db = await mongoDB();
+    const works = db.collection("works");
+    // find total work of each customer
+    let pipeline = [];
+    pipeline.push({
+      $lookup: {
+        from: "customers", // Replace with the actual collection name of customers
+        localField: "customer.$id", // Field in the "works" collection that references the customer
+        foreignField: "_id", // Field in the "customers" collection that is referenced
+        as: "customer", // Field in the output document that will contain the customer data
+      },
     });
-    const totalWork = worksDoc.size;
-    // find work of each customer
-    for (let i = 0; i < customers.length; i++) {
-      const customer = customers[i];
-      //random color rgb #000000 - #ffffff
-      customer.color = "#" + Math.floor(Math.random() * 16777215).toString(16);
-      // find workCount of customer it's ref
-      let workCount = 0;
-      worksDoc.forEach((res) => {
-        if (res.data().customer.id === customer.id) {
-          workCount++;
-        }
-      });
-      customer.workCount = workCount;
-      customer.ratio = ((customer.workCount / totalWork) * 100).toFixed(2);
+    pipeline.push({
+      $group: {
+        _id: "$customer",
+        name: {
+          $first: "$customer.name",
+        },
+        // get customer name by customer $id
+        workCount: {
+          $sum: 1,
+        },
+        // profit of each customer by profit not list
+        totalEarn: {
+          $sum: "$profit",
+        },
+      },
+    });
 
-      // find totalEarn of customer
-      let totalEarn = 0;
-      worksDoc.forEach((res) => {
-        if (res.data().customer.id === customer.id) {
-          totalEarn += res.data().profit;
-        }
-      });
-
-      customerMoney.push({
-        id: customer.id,
-        name: customer.name,
-        totalEarn: totalEarn,
-        color: customer.color,
-      });
-    }
-
-    // find ratio of total earn
+    const worksRes = await works.aggregate(pipeline).toArray();
+    let customerWork = [];
+    let customerMoney = [];
+    let totalWorks = 0;
     let totalEarn = 0;
-    customerMoney.forEach((res) => {
+    worksRes.forEach((res) => {
+      const color = "#" + Math.floor(Math.random() * 16777215).toString(16);
+      customerWork.push({
+        name: res.name[0],
+        workCount: res.workCount,
+        color: color,
+        ratio: 0,
+      });
+      totalWorks += res.workCount;
+      customerMoney.push({
+        name: res.name[0],
+        totalEarn: res.totalEarn,
+        color: color,
+        ratio: 0,
+      });
       totalEarn += res.totalEarn;
+    });
+    // calculate ratio of each customer
+    customerWork.forEach((res) => {
+      res.ratio = ((res.workCount / totalWorks) * 100).toFixed(2);
     });
     customerMoney.forEach((res) => {
       res.ratio = ((res.totalEarn / totalEarn) * 100).toFixed(2);
     });
 
-    customers.sort((a, b) => b.ratio - a.ratio);
-    customerMoney.sort((a, b) => b.totalEarn - a.totalEarn);
+    //sort customer by total work desc
+    customerWork.sort((a, b) => b.workCount - a.workCount);
+    //sort customer by total profit desc
+    customerMoney.sort((a, b) => b.totalProfit - a.totalProfit);
+
     return {
-      customers: customers,
+      customerWork: customerWork,
       customerMoney: customerMoney,
     };
   } catch (error) {
@@ -284,54 +378,44 @@ const getWorkCustomer = async (worksDoc) => {
 // years list in works or expenses
 const getYearsList = async () => {
   try {
-    const db = admin.firestore();
-    const worksDoc = await db.collection("works").get();
-    const expensesDoc = await db.collection("expenses").get();
-    const years = [];
-    worksDoc.forEach((res) => {
-      const year = new Date(res.data().date._seconds * 1000).getFullYear();
-      if (!years.includes(year)) {
-        years.push(year);
-      }
+    const db = await mongoDB();
+    const works = db.collection("works");
+    const expenses = db.collection("expenses");
+
+    //find years that have works or expenses in aggregate
+    const pipelineWork = [];
+    pipelineWork.push({
+      $group: {
+        _id: {
+          year: { $year: "$date" },
+        },
+      },
     });
-    expensesDoc.forEach((res) => {
-      const year = new Date(res.data().date._seconds * 1000).getFullYear();
-      if (!years.includes(year)) {
-        years.push(year);
+    const pipelineExpense = [];
+    pipelineExpense.push({
+      $group: {
+        _id: {
+          year: { $year: "$date" },
+        },
+      },
+    });
+
+    const worksRes = await works.aggregate(pipelineWork).toArray();
+    const expensesRes = await expenses.aggregate(pipelineExpense).toArray();
+
+    const years = [];
+
+    worksRes.forEach((res) => {
+      years.push(res._id.year);
+    });
+    expensesRes.forEach((res) => {
+      if (!years.includes(res._id.year)) {
+        years.push(res._id.year);
       }
     });
     //sort year desc
     years.sort((a, b) => b - a);
-
     return years;
-  } catch (error) {
-    throw new BadRequestError(error.message);
-  }
-};
-
-const getTotalWorkAndCustomer = async (year) => {
-  try {
-    const db = admin.firestore();
-    // find year in firestore timestamp if year is not null if null get all works
-    const start = year ? new Date(year, 0, 1) : null;
-    const end = year ? new Date(year, 11, 32) : null;
-    const startTimestamp = start
-      ? admin.firestore.Timestamp.fromDate(start)
-      : null;
-    const endTimestamp = end ? admin.firestore.Timestamp.fromDate(end) : null;
-    // get all works in year
-    const worksDoc = year
-      ? await db
-          .collection("works")
-          .where("date", ">=", startTimestamp)
-          .where("date", "<=", endTimestamp)
-          .get()
-      : await db.collection("works").get();
-    const data = {
-      totalWorks: await getTotalWorks(worksDoc),
-      workCustomer: await getWorkCustomer(worksDoc),
-    };
-    return data;
   } catch (error) {
     throw new BadRequestError(error.message);
   }
@@ -342,5 +426,6 @@ export {
   getTotalEarn,
   getTotalExpense,
   getYearsReport,
-  getTotalWorkAndCustomer,
+  getTotalWorks,
+  getWorkCustomer,
 };

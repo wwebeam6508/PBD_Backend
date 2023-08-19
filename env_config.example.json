@@ -17,5 +17,7 @@
         "expiresIn": "1y"
     },
     "isLimitOn":true,
+    "mongoDB": "mongodb+srv://",
+    "mongoDBName": "name",
     "CLIENT_URL":"http://localhost:3000"
 }

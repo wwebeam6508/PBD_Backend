@@ -6,6 +6,7 @@ import UserManagement from "./UserManagement.route.js";
 import CustomerManagement from "./CustomerManagment.route.js";
 import ExpenseManagment from "./ExpenseManagment.route.js";
 import Dashboard from "./Dashboard.route.js";
+import Utilitys from "./Utilitys.route.js";
 
 const routes = [
   {
@@ -39,6 +40,10 @@ const routes = [
   {
     path: "/dashboard",
     route: Dashboard,
+  },
+  {
+    path: "/utilitys",
+    route: Utilitys,
   },
 ];
 

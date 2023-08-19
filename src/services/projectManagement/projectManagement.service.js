@@ -242,9 +242,9 @@ function getPathStorageFromUrl(url) {
 
 const getAllWorksCount = async () => {
   try {
-    const db = admin.firestore();
-    const result = await db.collection("works").get();
-    return result.size;
+    const firestore = admin.firestore();
+    const workDoc = await firestore.collection("works").count().get();
+    return workDoc.data().count;
   } catch (error) {
     throw new BadRequestError(error.message);
   }
