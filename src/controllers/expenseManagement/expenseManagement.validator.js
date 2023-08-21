@@ -15,7 +15,6 @@ function validateAddExpense(httpRequest) {
     date: Joi.date().required(),
     currentVat: Joi.number().required(),
     workRef: Joi.string().optional().allow(""),
-    isWorkRef: Joi.boolean().required(),
   });
   return schema.validate(httpRequest.body, options);
 }
@@ -30,7 +29,6 @@ function validateUpdateExpense(httpRequest) {
     addLists: Joi.array().optional(),
     removeLists: Joi.array().optional(),
     currentVat: Joi.number().optional(),
-    isWorkRef: Joi.boolean().optional(),
   });
   return schema.validate(httpRequest.body, options);
 }

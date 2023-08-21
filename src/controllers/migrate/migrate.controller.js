@@ -2,6 +2,8 @@ import firestoreBackup from "@sgg10/firestore-backup";
 import { createRequire } from "module";
 import mongoDB from "../../configs/mongo.config.js";
 import { BadRequestError } from "../../utils/api-errors.js";
+import { ObjectId } from "mongodb";
+import crypto from "crypto";
 const require = createRequire(import.meta.url);
 const serviceAccount = require("../../../serviceAccount.json");
 const AllJson = require("../../../All.json");
@@ -39,14 +41,20 @@ async function migrateToMongo() {
         if (key === "works") {
           //replace customer with $ref :customer._path.segments[1]
           if (value1.customer && value1.customer._path) {
+            const hexString = crypto
+              .createHash("md5")
+              .update(value1.customer._path.segments[1])
+              .digest("hex")
+              .slice(0, 24);
+            const objectId = new ObjectId(hexString);
             value1.customer = {
               $ref: "customers",
-              $id: value1.customer._path.segments[1],
+              $id: objectId,
             };
           } else {
             value1.customer = {
               $ref: "customers",
-              $id: "",
+              $id: null,
             };
           }
           if (value1.date && value1.date._seconds) {
@@ -74,19 +82,35 @@ async function migrateToMongo() {
             value1.date = new Date(value1.date);
           }
           if (value1.workRef && value1.workRef._path) {
+            const hexString = crypto
+              .createHash("md5")
+              .update(value1.workRef._path.segments[1])
+              .digest("hex")
+              .slice(0, 24);
+            const objectId = new ObjectId(hexString);
             value1.workRef = {
               $ref: "works",
-              $id: value1.workRef._path.segments[1],
+              $id: objectId,
             };
           } else {
             value1.workRef = {
               $ref: "works",
-              $id: "",
+              $id: null,
             };
           }
         }
+
+        // genearte hex string 24 length by seed key1
+
+        const hexString = crypto
+          .createHash("md5")
+          .update(key1)
+          .digest("hex")
+          .slice(0, 24);
+        const objectId = new ObjectId(hexString);
+
         collection.insertOne({
-          _id: key1,
+          _id: objectId,
           ...value1,
         });
       }

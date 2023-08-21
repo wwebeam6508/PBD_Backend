@@ -27,7 +27,7 @@ async function getExpensesPaginationController(httpRequest) {
     const totalPrice = parseFloat(res.lists.reduce((a, b) => a + b.price, 0));
     let passData = {
       title: res.title,
-      date: new Date(res.date._seconds * 1000),
+      date: res.date,
       totalPrice: totalPrice ? totalPrice : 0,
       expenseID: res.expenseID,
       workRef: res.workRef,

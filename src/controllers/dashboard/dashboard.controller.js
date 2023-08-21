@@ -60,7 +60,7 @@ async function getDashboardController() {
   for (const key in cacheData) {
     if (!cacheData[key]) {
       if (data[key] != (null || undefined)) {
-        caching.setCache(cacheKeys[key], data[key], 60 * 60);
+        caching.setCache(cacheKeys[key], data[key], 60 * 5);
       }
     }
   }
