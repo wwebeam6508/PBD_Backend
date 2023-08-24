@@ -27,13 +27,13 @@ async function getWorkPaginationController(httpRequest) {
   ).map((res) => {
     let passData = {
       title: res.title,
-      date: new Date(res.date._seconds * 1000),
+      date: res.date,
       profit: res.profit ? res.profit : 0,
       projectID: res.projectID,
       customer: res.customer,
     };
     if (res.dateEnd) {
-      passData.dateEnd = new Date(res.dateEnd._seconds * 1000);
+      passData.dateEnd = res.dateEnd ? res.dateEnd : null;
     }
     return passData;
   });
@@ -74,13 +74,22 @@ async function addWorkController(httpRequest) {
 
 async function deleteWorkController(httpRequest) {
   const body = httpRequest.body;
-  await deleteWork(body);
-  return {
-    statusCode: 200,
-    body: {
-      message: "success",
-    },
-  };
+  const res = await deleteWork(body);
+  if (res.status) {
+    return {
+      statusCode: 200,
+      body: {
+        message: "success",
+      },
+    };
+  } else {
+    return {
+      statusCode: 200,
+      body: {
+        message: res.message,
+      },
+    };
+  }
 }
 
 async function updateWorkController(httpRequest) {

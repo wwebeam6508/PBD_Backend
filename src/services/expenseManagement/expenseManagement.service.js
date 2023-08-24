@@ -1,7 +1,7 @@
 import admin from "firebase-admin";
 import { BadRequestError } from "../../utils/api-errors.js";
 import mongoDB from "../../configs/mongo.config.js";
-import { DBRef, ObjectId } from "mongodb";
+import { ObjectId } from "mongodb";
 
 const getExpenses = async ({ page = 1, pageSize = 5, sortTitle, sortType }) => {
   try {
@@ -46,7 +46,7 @@ const getExpenses = async ({ page = 1, pageSize = 5, sortTitle, sortType }) => {
     const data = total.map((res) => {
       return {
         ...res,
-        workRef: res.workRef ? res.workRef[0] : {},
+        workRef: res.workRef ? res.workRef[0] : "",
       };
     });
     return data;
@@ -78,6 +78,7 @@ const getExpenseByID = async ({ expenseID }) => {
         date: { $toDate: "$date" },
         lists: 1,
         currentVat: 1,
+        detail: 1,
         workRef: {
           $cond: {
             if: { $isArray: "$workRef" },

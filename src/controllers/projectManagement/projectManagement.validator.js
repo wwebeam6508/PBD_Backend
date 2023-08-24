@@ -16,7 +16,6 @@ function validateAddWork(httpRequest) {
     customer: Joi.string().required(),
     dateEnd: Joi.date().optional(),
     images: Joi.array().optional(),
-    isCustomerRef: Joi.boolean().required(),
   });
   return schema.validate(httpRequest.body, options);
 }
@@ -32,7 +31,6 @@ function validateUpdateWork(httpRequest) {
     dateEnd: Joi.date().optional(),
     imagesAdd: Joi.array().optional(),
     imagesDelete: Joi.array().optional(),
-    isCustomerRef: Joi.boolean().optional(),
   });
   return schema.validate(httpRequest.body, options);
 }

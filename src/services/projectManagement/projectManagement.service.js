@@ -2,51 +2,98 @@ import admin from "firebase-admin";
 import { BadRequestError } from "../../utils/api-errors.js";
 import { uploadFiletoStorage } from "../../utils/helper.util.js";
 import env from "../../configs/firebase.config.js";
+import mongoDB from "../../configs/mongo.config.js";
+import { ObjectId } from "mongodb";
 
 const getWorks = async ({ page = 1, pageSize = 2, sortTitle, sortType }) => {
   try {
     const offset = pageSize * (page - 1);
-    const db = admin.firestore();
+    const db = await mongoDB();
     const snapshot = db.collection("works");
-    let workQuery = snapshot.limit(pageSize).offset(offset);
+    // query pagination by mongodb not firestore
+    let pipeline = [];
     if (sortTitle && sortType) {
-      workQuery = workQuery.orderBy(sortTitle, sortType);
+      pipeline.push({ $sort: { [sortTitle]: sortType === "desc" ? -1 : 1 } });
     }
-    const total = await workQuery.get();
-    const result = await Promise.all(
-      total.docs.map(async (res) => {
-        return {
-          projectID: res.id,
-          ...res.data(),
-          //check customer type ref or string
-          customer:
-            typeof res.data().customer === "string"
-              ? res.data().customer
-              : (await res.data().customer.get()).data().name,
-        };
-      })
-    );
-    return result;
+    pipeline.push({ $skip: offset });
+    pipeline.push({ $limit: pageSize });
+    pipeline.push({
+      $lookup: {
+        from: "customers",
+        localField: "customer.$id",
+        foreignField: "_id",
+        as: "customer",
+      },
+    });
+
+    //get data but (only title  from workRef and workRef is reference) and date to new Date
+    pipeline.push({
+      $project: {
+        projectID: "$_id",
+        title: 1,
+        date: { $toDate: "$date" },
+        profit: 1,
+        dateEnd: { $toDate: "$dateEnd" },
+        customer: {
+          $cond: {
+            if: { $isArray: "$customer" },
+            then: "$customer.name",
+            else: "",
+          },
+        },
+      },
+    });
+    const total = await snapshot.aggregate(pipeline).toArray();
+
+    const data = total.map((res) => {
+      return {
+        ...res,
+        customer: res.customer ? res.customer[0] : "",
+      };
+    });
+    return data;
   } catch (error) {
     throw new BadRequestError(error.message);
   }
 };
 
 const getWorksByID = async ({ workID }) => {
+  const db = await mongoDB();
   try {
-    const db = admin.firestore();
-    const snapshot = db.collection("works").doc(workID);
-    const workQuery = await snapshot.get();
-    let result = {
-      ...workQuery.data(),
-      projectID: workQuery.id,
-      customer:
-        typeof workQuery.data().customer === "string"
-          ? workQuery.data().customer
-          : (await workQuery.data().customer.get()).id,
+    const snapshot = db.collection("works");
+    let pipeline = [];
+    pipeline.push({ $match: { _id: new ObjectId(workID) } });
+    pipeline.push({
+      $lookup: {
+        from: "customers",
+        localField: "customer.$id",
+        foreignField: "_id",
+        as: "customer",
+      },
+    });
+    pipeline.push({
+      $project: {
+        projectID: "$_id",
+        title: 1,
+        date: { $toDate: "$date" },
+        profit: 1,
+        dateEnd: { $toDate: "$dateEnd" },
+        detail: 1,
+        customer: {
+          $cond: {
+            if: { $isArray: "$customer" },
+            then: "$customer._id",
+            else: "",
+          },
+        },
+        images: 1,
+      },
+    });
+    const total = await snapshot.aggregate(pipeline).next();
+    return {
+      ...total,
+      customer: total.customer ? total.customer[0] : "",
     };
-    result.isCustomerRef = typeof workQuery.data().customer === "object";
-    return result;
   } catch (error) {
     throw new BadRequestError(error.message);
   }
@@ -60,85 +107,123 @@ const addWork = async ({
   profit = 0,
   images = [],
   customer,
-  isCustomerRef,
 }) => {
   const firstAdd = {
     title,
-    date: admin.firestore.Timestamp.fromDate(date),
+    date: date,
     detail,
     profit,
-    dateEnd: dateEnd ? admin.firestore.Timestamp.fromDate(dateEnd) : null,
-    customer: isCustomerRef
-      ? admin.firestore().doc(`customers/${customer}`)
-      : customer,
+    dateEnd: dateEnd ? dateEnd : null,
+    customer: customer ? customer : null,
   };
-  const db = admin.firestore();
-  await db
-    .collection("works")
-    .add(firstAdd)
-    .catch((error) => {
-      throw new BadRequestError(error.message);
-    })
-    .then(async (res) => {
-      const workID = res.id;
-      if (images.length > 0) {
-        const urlData = await uploadStorageForProjects(images, "works", workID);
-        await db
-          .collection("works")
-          .doc(workID)
-          .update({ images: urlData })
-          .catch((error) => {
-            throw new BadRequestError(error.message);
-          });
-      }
-    });
+  try {
+    const db = await mongoDB();
+    const snapshot = db.collection("works");
+    await snapshot
+      .insertOne({
+        ...firstAdd,
+        customer: customer
+          ? {
+              $ref: "customers",
+              $id: customer ? new ObjectId(customer) : null,
+            }
+          : null,
+      })
+      .catch((error) => {
+        throw new BadRequestError(error.message);
+      });
+    const workID = firstAdd._id;
+    if (images.length > 0) {
+      const urlData = await uploadStorageForProjects(images, "works", workID);
+      await snapshot
+        .updateOne({ _id: new ObjectId(workID) }, { $set: { images: urlData } })
+        .catch((error) => {
+          throw new BadRequestError(error.message);
+        });
+    }
+
+    return workID;
+
+    // const db = admin.firestore();
+    // await db
+    //   .collection("works")
+    //   .add(firstAdd)
+    //   .catch((error) => {
+    //     throw new BadRequestError(error.message);
+    //   })
+    //   .then(async (res) => {
+    //     const workID = res.id;
+    //     if (images.length > 0) {
+    //       const urlData = await uploadStorageForProjects(
+    //         images,
+    //         "works",
+    //         workID
+    //       );
+    //       await db
+    //         .collection("works")
+    //         .doc(workID)
+    //         .update({ images: urlData })
+    //         .catch((error) => {
+    //           throw new BadRequestError(error.message);
+    //         });
+    //     }
+    //   });
+  } catch (error) {
+    throw new BadRequestError(error.message);
+  }
 };
 
 const deleteWork = async ({ workID }) => {
-  // check if project has any expenses in reference
-  const expenseData = await db
-    .collection("expenses")
-    .where("workRef", "==", db.doc(`works/${workID}`))
-    .get();
-  if (expenseData.size > 0) {
-    const nameOfExpenses = expenseData.docs.map((res) => res.data().title);
-    let listMessage = "";
-    nameOfExpenses.forEach((name) => {
-      listMessage += `${name}, `;
-    });
-    listMessage = listMessage.substring(0, listMessage.length - 2);
+  const mongo_DB = await mongoDB();
+  const storage = admin.storage();
 
-    throw new BadRequestError(
-      `ไม่สามารถลบงานได้เนื่องจากมีรายการค่าใช้จ่ายที่อ้างอิงถึงงานนี้ โดยมีรายการค่าใช้จ่ายดังนี้ ${listMessage}`
-    );
-  }
-  const db = admin.firestore();
-  //remove images in storage
-  const workData = await getWorksByID({ workID });
-  if (workData.images && workData.images.length > 0) {
-    await Promise.all(
-      workData.images.map(async (image) => {
-        const fileName = `works/${getPathStorageFromUrl(image)}`;
-        await admin
-          .storage()
-          .bucket()
-          .file(fileName)
-          .delete()
-          .catch((error) => {
-            throw new BadRequestError(error.message);
-          });
-      })
-    );
-  }
+  try {
+    const expenseDoc = mongo_DB.collection("expenses");
+    let pipeline = [];
+    pipeline.push({ $match: { "workRef.$id": new ObjectId(workID) } });
+    pipeline.push({ $project: { title: 1 } });
+    const expenseData = await expenseDoc.aggregate(pipeline).toArray();
+    if (expenseData.length > 0) {
+      const nameOfExpenses = expenseData.map((res) => res.title);
+      let listMessage = "";
+      nameOfExpenses.forEach((name) => {
+        listMessage += `-${name}, `;
+      });
+      listMessage = listMessage.substring(0, listMessage.length - 2);
 
-  //delete project
-  await db
-    .collection("works")
-    .doc(workID)
-    .delete()
-    .catch((error) => {
+      return {
+        status: false,
+        message: `ไม่สามารถลบงานได้เนื่องจากมีรายการค่าใช้จ่ายที่อ้างอิงถึงงานนี้ โดยมีรายการค่าใช้จ่ายดังนี้ ${listMessage}`,
+      };
+    }
+    const workData = await getWorksByID({ workID });
+    if (workData.images && workData.images.length > 0) {
+      await Promise.all(
+        workData.images.map(async (image) => {
+          const fileName = `works/${getPathStorageFromUrl(image)}`;
+          await storage
+            .bucket()
+            .file(fileName)
+            .delete()
+            .catch((error) => {
+              throw new BadRequestError(error.message);
+            });
+        })
+      );
+    }
+    const workDoc = mongo_DB.collection("works");
+    // delete workDoc
+    await workDoc.deleteOne({ _id: new ObjectId(workID) }).catch((error) => {
       throw new BadRequestError(error.message);
     });
+
+    return {
+      status: true,
+      message: "ลบงานสำเร็จ",
+    };
+  } catch (error) {
+    throw new BadRequestError(error.message);
+  }
 };
 
 const updateWork = async ({
@@ -149,79 +234,71 @@ const updateWork = async ({
   detail = "",
   profit = 0,
   customer,
-  isCustomerRef,
   imagesDelete = [],
   imagesAdd = [],
 }) => {
   let body = {
     title,
-    date: admin.firestore.Timestamp.fromDate(date),
+    date: date,
     detail,
     profit,
-    customer: isCustomerRef
-      ? admin.firestore().doc(`customers/${customer}`)
-      : customer,
+    customer: {
+      $ref: "customers",
+      $id: customer ? new ObjectId(customer) : null,
+    },
+    dateEnd: dateEnd ? dateEnd : null,
   };
-  if (typeof dateEnd !== "undefined") {
-    body.dateEnd = admin.firestore.Timestamp.fromDate(new Date(dateEnd));
-  } else {
-    body.dateEnd = null;
-  }
-  const db = admin.firestore();
-  const storage = admin.storage();
-
-  await db
-    .collection("works")
-    .doc(workID)
-    .update({
-      ...body,
-    })
-    .catch((error) => {
-      throw new BadRequestError(error.message);
-    });
-
-  if (imagesDelete.length > 0) {
-    //delete file in storage by url
-    try {
-      await Promise.all(
-        imagesDelete.map(async (image) => {
-          const fileName = `works/${getPathStorageFromUrl(image)}`;
-          const file = storage.bucket().file(fileName);
-          await file.delete();
-        })
-      );
-    } catch (error) {
-      throw new BadRequestError(error.message);
-    }
-    //delete url in database
-    try {
-      await db
-        .collection("works")
-        .doc(workID)
-        .update({
-          //array remove
-          images: admin.firestore.FieldValue.arrayRemove(...imagesDelete),
-        });
-    } catch (error) {
-      throw new BadRequestError(error.message);
-    }
-  }
-
-  let imagetoAdd = [];
-  if (imagesAdd.length > 0) {
-    //add file in storage by url
-    const urlData = await uploadStorageForProjects(imagesAdd, "works", workID);
-    imagetoAdd = [...urlData];
-    await db
-      .collection("works")
-      .doc(workID)
-      .update({
-        //array union
-        images: admin.firestore.FieldValue.arrayUnion(...imagetoAdd),
-      })
+  try {
+    const db = await mongoDB();
+    const snapshot = db.collection("works");
+    await snapshot
+      .updateOne({ _id: new ObjectId(workID) }, { $set: body })
       .catch((error) => {
         throw new BadRequestError(error.message);
       });
+    if (imagesDelete.length > 0) {
+      //delete file in storage by url
+      await Promise.all(
+        imagesDelete.map(async (image) => {
+          const fileName = `works/${getPathStorageFromUrl(image)}`;
+          const file = admin.storage().bucket().file(fileName);
+          await file.delete();
+        })
+      );
+      await snapshot
+        .updateOne(
+          { _id: new ObjectId(workID) },
+          {
+            //array remove
+            $pull: { images: { $in: imagesDelete } },
+          }
+        )
+        .catch((error) => {
+          throw new BadRequestError(error.message);
+        });
+    }
+    if (imagesAdd.length > 0) {
+      //add file in storage by url
+      const urlData = await uploadStorageForProjects(
+        imagesAdd,
+        "works",
+        workID
+      );
+      await snapshot
+        .updateOne(
+          { _id: new ObjectId(workID) },
+          {
+            //array union
+            $addToSet: { images: { $each: urlData } },
+          }
+        )
+        .catch((error) => {
+          throw new BadRequestError(error.message);
+        });
+    }
+    return true;
+  } catch (error) {
+    throw new BadRequestError(error.message);
   }
 };
 
@@ -242,9 +319,10 @@ function getPathStorageFromUrl(url) {
 
 const getAllWorksCount = async () => {
   try {
-    const firestore = admin.firestore();
-    const workDoc = await firestore.collection("works").count().get();
-    return workDoc.data().count;
+    const db = await mongoDB();
+    const snapshot = db.collection("works");
+    const total = await snapshot.countDocuments();
+    return total;
   } catch (error) {
     throw new BadRequestError(error.message);
   }
@@ -252,14 +330,12 @@ const getAllWorksCount = async () => {
 
 const getCustomerName = async () => {
   try {
-    const db = admin.firestore();
-    const result = await db.collection("customers").get();
-    return result.docs.map((res) => {
-      return {
-        id: res.id,
-        name: res.data().name,
-      };
-    });
+    const mongo_DB = await mongoDB();
+    const snapshot = mongo_DB.collection("customers");
+    let pipeline = [];
+    pipeline.push({ $project: { id: "$_id", name: 1 } });
+    const total = await snapshot.aggregate(pipeline).toArray();
+    return total;
   } catch (error) {
     throw new BadRequestError(error.message);
   }
