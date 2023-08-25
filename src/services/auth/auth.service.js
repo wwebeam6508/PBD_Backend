@@ -13,57 +13,88 @@ const env = require("../../../env_config.json");
 const loginDB = async ({ username, password }) => {
   const db = await mongoDB();
   const ref = db.collection("users");
-  //find by mongoDB not firestore
-  let res = await ref.findOne({ username: username });
+  //find by mongoDB not firestore by aggregate
+  let pipeline = [];
+  pipeline.push({ $match: { username: username } });
+  pipeline.push({
+    $lookup: {
+      from: "userType",
+      localField: "userTypeID.$id",
+      foreignField: "_id",
+      as: "userType",
+    },
+  });
+  pipeline.push({ $unwind: "$userType" });
+  pipeline.push({
+    $project: {
+      userID: "$_id",
+      username: 1,
+      password: 1,
+      userType: {
+        userTypeID: "$userType._id",
+        name: "$userType.name",
+        permission: "$userType.permission",
+      },
+      refreshToken: 1,
+    },
+  });
+  const res = await ref.aggregate(pipeline).next();
+
   if (!res) {
     throw new NotFoundError("ไม่พบผู้ใช้");
   }
-  res.userID = res._id;
-  console.log(res);
-  return res;
-  // const db = admin.firestore()
-  // const ref = db.collection('users')
-  // const query = await ref.where('username', '==', username).get()
-  // if (query.empty) {
-  //     throw new NotFoundError('user not found')
-  // }
-  // let data = {}
-  // query.forEach(doc => {
-  //     data = doc.data()
-  //     data.userID = doc.id
-  // })
-  // data.userType = await (await db.doc(`userType/${data.userTypeID}`).get()).data()
-  // const isValidPass = bcrypt.compareSync(password, data.password);
-  // if (!isValidPass) {
-  //     throw new BadRequestError('Username or Password is invalid!');
-  // }
-  // delete data.password
-  // delete data.refreshToken
-  // const accessToken = await generateJWT({ payload: { data } })
-  // const refreshToken = await generateJWT({
-  //     payload: { data }, secretKey: env.JWT_REFRESH_TOKEN_SECRET
-  //     , signOption: env.JWT_REFRESH_SIGN_OPTIONS
-  // })
-  // return {
-  //     accessToken: accessToken,
-  //     refreshToken: refreshToken,
-  //     userProfile: data
-  // }
+
+  const isValidPass = bcrypt.compareSync(password, res.password);
+
+  if (!isValidPass) {
+    throw new BadRequestError("ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
+  }
+
+  delete res.password;
+  delete res.refreshToken;
+  const accessToken = await generateJWT({ payload: { data: res } });
+  const refreshToken = await generateJWT({
+    payload: { data: res },
+    secretKey: env.JWT_REFRESH_TOKEN_SECRET,
+    signOption: env.JWT_REFRESH_SIGN_OPTIONS,
+  });
+  return {
+    accessToken: accessToken,
+    refreshToken: refreshToken,
+    userProfile: res,
+  };
 };
 
 const updateRefreshToken = async ({ token, userID }) => {
-  const db = admin.firestore();
-  const ref = db.doc(`users/${userID}`);
-  await ref.update({ refreshToken: token }).catch((err) => {
-    throw new BadRequestError(err.message);
-  });
+  const db = await mongoDB();
+  const ref = db.collection("users");
+  const res = await ref
+    .updateOne(
+      { _id: userID },
+      {
+        $set: {
+          refreshToken: token,
+        },
+      }
+    )
+    .catch((err) => {
+      throw new BadRequestError(err.message);
+    });
+  return res;
 };
 
 const checkRefreshToken = async ({ token, userID }) => {
-  const db = admin.firestore();
-  const ref = db.doc(`users/${userID}`);
-  const result = await ref.get();
-  if (result.data().refreshToken.split(" ")[1] != token) return false;
+  const db = await mongoDB();
+  const ref = db.collection("users");
+  let pipeline = [];
+  pipeline.push({ $match: { _id: userID } });
+  pipeline.push({
+    $project: {
+      refreshToken: 1,
+    },
+  });
+  const result = await ref.aggregate(pipeline).next();
+  if (result.refreshToken.split(" ")[1] != token) return false;
   return true;
 };
 
@@ -89,11 +120,20 @@ const refreshTokenDB = async ({ token }) => {
 };
 
 const removeRefreshToken = async ({ userID }) => {
-  const db = admin.firestore();
-  const ref = db.doc(`users/${userID}`);
-  await ref.update({ refreshToken: "" }).catch((err) => {
-    throw new BadRequestError(err.message);
-  });
+  const db = await mongoDB();
+  const ref = db.collection("users");
+  await ref
+    .updateOne(
+      { _id: userID },
+      {
+        $set: {
+          refreshToken: "",
+        },
+      }
+    )
+    .catch((err) => {
+      throw new BadRequestError(err.message);
+    });
 };
 
 export { loginDB, refreshTokenDB, updateRefreshToken, removeRefreshToken };

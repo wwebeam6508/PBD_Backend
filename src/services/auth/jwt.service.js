@@ -1,50 +1,46 @@
-import jwt from 'jsonwebtoken'
-import { BadRequestError } from '../../utils/api-errors.js'
-import { createRequire } from 'module';
+import jwt from "jsonwebtoken";
+import { BadRequestError } from "../../utils/api-errors.js";
+import { createRequire } from "module";
 const require = createRequire(import.meta.url);
-const env = require('../../../env_config.json');
+const env = require("../../../env_config.json");
 
 const generateJWT = async ({
-  payload, 
+  payload,
   secretKey = env.JWT_ACCESS_TOKEN_SECRET,
-  signOption = env.JWT_ACCESS_SIGN_OPTIONS
+  signOption = env.JWT_ACCESS_SIGN_OPTIONS,
 }) => {
   try {
-    const token = await `Bearer ${jwt.sign(payload, secretKey, signOption)}`
-    return token
+    const token = await `Bearer ${jwt.sign(payload, secretKey, signOption)}`;
+    return token;
   } catch (error) {
-    throw new BadRequestError(error.message)
+    throw new BadRequestError(error.message);
   }
-}
+};
 
 const verifyJWT = async ({
-  token, 
+  token,
   secretKey = env.JWT_ACCESS_TOKEN_SECRET,
-  signOption = env.JWT_ACCESS_SIGN_OPTIONS
+  signOption = env.JWT_ACCESS_SIGN_OPTIONS,
 }) => {
   try {
-    const data = await jwt.verify(token, secretKey, signOption)
-    return data
+    const data = await jwt.verify(token, secretKey, signOption);
+    return data;
   } catch (error) {
-    throw new BadRequestError(error.message)
+    throw new BadRequestError(error.message);
   }
-}
+};
 
 const verifyRefreshJWT = async ({
   token,
-  secretKey = env.JWT_REFRESH_TOKEN_SECRET
+  secretKey = env.JWT_REFRESH_TOKEN_SECRET,
 }) => {
   try {
-    return await jwt.verify(token, secretKey,async (err, payload)=>{
-      if(err) throw new BadRequestError(err.message)
-      return await payload
-    })
+    return await jwt.verify(token, secretKey, async (err, payload) => {
+      if (err) throw new BadRequestError(err.message);
+      return await payload;
+    });
   } catch (error) {
-    throw new BadRequestError(error.message)
+    throw new BadRequestError(error.message);
   }
-}
-export {
-  generateJWT,
-  verifyJWT,
-  verifyRefreshJWT
-}
+};
+export { generateJWT, verifyJWT, verifyRefreshJWT };
