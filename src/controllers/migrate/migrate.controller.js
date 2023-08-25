@@ -74,6 +74,23 @@ async function migrateToMongo() {
           } else if (value1.createdAt) {
             value1.createdAt = new Date(value1.createdAt);
           }
+          if (value1.userTypeID) {
+            const hexString = crypto
+              .createHash("md5")
+              .update(value1.userTypeID)
+              .digest("hex")
+              .slice(0, 24);
+            const objectId = new ObjectId(hexString);
+            value1.userTypeID = {
+              $ref: "userType",
+              $id: objectId,
+            };
+          } else {
+            value1.userTypeID = {
+              $ref: "userType",
+              $id: null,
+            };
+          }
         }
         if (key === "expenses") {
           if (value1.date && value1.date._seconds) {
