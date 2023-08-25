@@ -15,7 +15,25 @@ async function getWorkPaginationController(httpRequest) {
   const pageSize = query.pageSize ? Number(query.pageSize) : 10;
   const sortTitle = query.sortTitle ? query.sortTitle : "date";
   const sortType = query.sortType ? query.sortType : "desc";
-  const allWorksCount = await getAllWorksCount();
+  const search = query.search ? query.search : "";
+  const searchFilter = query.searchFilter ? query.searchFilter : "";
+  const searchPipeline = [
+    {
+      $lookup: {
+        from: "customers",
+        localField: "customer.$id",
+        foreignField: "_id",
+        as: "customers",
+      },
+    },
+    {
+      $match:
+        searchFilter === "customer"
+          ? { "customers.name": { $regex: search, $options: "i" } }
+          : { [searchFilter]: { $regex: search, $options: "i" } },
+    },
+  ];
+  const allWorksCount = await getAllWorksCount(search, searchPipeline);
   const pages = pageArray(allWorksCount, pageSize, query.page, 5);
   const workDoc = (
     await getWorks({
@@ -23,6 +41,8 @@ async function getWorkPaginationController(httpRequest) {
       pageSize: pageSize,
       sortTitle: sortTitle,
       sortType: sortType,
+      search: search,
+      searchPipeline: searchPipeline,
     })
   ).map((res) => {
     let passData = {

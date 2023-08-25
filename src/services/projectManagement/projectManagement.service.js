@@ -5,7 +5,14 @@ import env from "../../configs/firebase.config.js";
 import mongoDB from "../../configs/mongo.config.js";
 import { ObjectId } from "mongodb";
 
-const getWorks = async ({ page = 1, pageSize = 2, sortTitle, sortType }) => {
+const getWorks = async ({
+  page = 1,
+  pageSize = 2,
+  sortTitle,
+  sortType,
+  search,
+  searchPipeline,
+}) => {
   try {
     const offset = pageSize * (page - 1);
     const db = await mongoDB();
@@ -14,6 +21,10 @@ const getWorks = async ({ page = 1, pageSize = 2, sortTitle, sortType }) => {
     let pipeline = [];
     if (sortTitle && sortType) {
       pipeline.push({ $sort: { [sortTitle]: sortType === "desc" ? -1 : 1 } });
+    }
+    if (search) {
+      //merge searchPipeline with pipeline
+      pipeline = [...searchPipeline, ...pipeline];
     }
     pipeline.push({ $skip: offset });
     pipeline.push({ $limit: pageSize });
@@ -317,12 +328,18 @@ function getPathStorageFromUrl(url) {
   return imagePath;
 }
 
-const getAllWorksCount = async () => {
+const getAllWorksCount = async (search, searchPipeline) => {
   try {
     const db = await mongoDB();
     const snapshot = db.collection("works");
-    const total = await snapshot.countDocuments();
-    return total;
+    let pipeline = [];
+    if (search) {
+      pipeline = [...searchPipeline, ...pipeline];
+    }
+    pipeline.push({ $count: "total" });
+    const total = await snapshot.aggregate(pipeline).next();
+    const totalData = total ? total.total : 0;
+    return totalData;
   } catch (error) {
     throw new BadRequestError(error.message);
   }
