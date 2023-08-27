@@ -7,7 +7,7 @@ import {
   getWorksByID,
   updateWork,
 } from "../../services/projectManagement/projectManagement.service.js";
-import { pageArray } from "../../utils/helper.util.js";
+import { isEmpty, pageArray } from "../../utils/helper.util.js";
 import caching from "../../utils/caching.js";
 
 async function getWorkPaginationController(httpRequest) {
@@ -30,6 +30,24 @@ async function getWorkPaginationController(httpRequest) {
       $match:
         searchFilter === "customer"
           ? { "customers.name": { $regex: search, $options: "i" } }
+          : searchFilter === "profit"
+          ? {
+              profit: {
+                $gte: Number(search.split(",")[0]),
+                $lte: Number(search.split(",")[1]),
+              },
+            }
+          : searchFilter === "date" || searchFilter === "dateEnd"
+          ? {
+              [searchFilter]: {
+                $gte: new Date(search.split(",")[0]),
+                $lte: new Date(
+                  !isEmpty(search.split(",")[1])
+                    ? search.split(",")[1]
+                    : new Date()
+                ),
+              },
+            }
           : { [searchFilter]: { $regex: search, $options: "i" } },
     },
   ];

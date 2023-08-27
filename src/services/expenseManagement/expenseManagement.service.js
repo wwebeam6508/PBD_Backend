@@ -3,7 +3,14 @@ import { BadRequestError } from "../../utils/api-errors.js";
 import mongoDB from "../../configs/mongo.config.js";
 import { ObjectId } from "mongodb";
 
-const getExpenses = async ({ page = 1, pageSize = 5, sortTitle, sortType }) => {
+const getExpenses = async ({
+  page = 1,
+  pageSize = 5,
+  sortTitle,
+  sortType,
+  search,
+  searchPipeline,
+}) => {
   try {
     const offset = pageSize * (page - 1);
     const db = await mongoDB();
@@ -12,6 +19,10 @@ const getExpenses = async ({ page = 1, pageSize = 5, sortTitle, sortType }) => {
     let pipeline = [];
     if (sortTitle && sortType) {
       pipeline.push({ $sort: { [sortTitle]: sortType === "desc" ? -1 : 1 } });
+    }
+    if (search) {
+      //merge searchPipeline with pipeline
+      pipeline = [...searchPipeline, ...pipeline];
     }
     pipeline.push({ $skip: offset });
     pipeline.push({ $limit: pageSize });
