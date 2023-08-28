@@ -202,12 +202,18 @@ const deleteExpense = async ({ expenseID }) => {
   }
 };
 
-const getExpensesCount = async () => {
+const getExpensesCount = async (search, searchPipeline) => {
   try {
     const db = await mongoDB();
     const snapshot = db.collection("expenses");
-    const total = await snapshot.countDocuments();
-    return total;
+    let pipeline = [];
+    if (search) {
+      pipeline = [...searchPipeline, ...pipeline];
+    }
+    pipeline.push({ $count: "total" });
+    const total = await snapshot.aggregate(pipeline).next();
+    const totalData = total ? total.total : 0;
+    return totalData;
   } catch (error) {
     throw new BadRequestError(error.message);
   }

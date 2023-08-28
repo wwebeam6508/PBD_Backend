@@ -1,30 +1,42 @@
 import admin from "firebase-admin";
 import { BadRequestError } from "../../utils/api-errors.js";
+import mongoDB from "../../configs/mongo.config.js";
+import { ObjectId } from "mongodb";
 
 const getCustomers = async ({
   page = 1,
   pageSize = 5,
   sortTitle,
   sortType,
+  search,
+  searchPipeline,
 }) => {
   try {
     const offset = pageSize * (page - 1);
-    const db = admin.firestore();
+    const db = await mongoDB();
     const snapshot = db.collection("customers");
-    let customerQuery = snapshot.limit(pageSize).offset(offset);
+    let pipeline = [];
     if (sortTitle && sortType) {
-      customerQuery = customerQuery.orderBy(sortTitle, sortType);
+      pipeline.push({ $sort: { [sortTitle]: sortType === "desc" ? -1 : 1 } });
     }
-    const total = await customerQuery.get();
-    const result = await Promise.all(
-      total.docs.map(async (res) => {
-        return {
-          customerID: res.id,
-          ...res.data(),
-        };
-      })
-    );
-    return result;
+    if (search) {
+      //merge searchPipeline with pipeline
+      pipeline = [...searchPipeline, ...pipeline];
+    }
+
+    pipeline.push({ $skip: offset });
+    pipeline.push({ $limit: pageSize });
+    // get only customerID and name and address and taxID
+    pipeline.push({
+      $project: {
+        customerID: "$_id",
+        name: 1,
+        address: 1,
+        taxID: 1,
+      },
+    });
+    const total = await snapshot.aggregate(pipeline).toArray();
+    return total;
   } catch (error) {
     throw new BadRequestError(error.message);
   }
@@ -32,14 +44,23 @@ const getCustomers = async ({
 
 const getCustomerByID = async ({ customerID }) => {
   try {
-    const db = admin.firestore();
-    const snapshot = db.collection("customers").doc(customerID);
-    const customerQuery = await snapshot.get();
-    let result = {
-      projectID: customerQuery.id,
-      ...customerQuery.data(),
-    };
-    return result;
+    const db = await mongoDB();
+    const snapshot = db.collection("customers");
+    let pipeline = [];
+    pipeline.push({ $match: { _id: new ObjectId(customerID) } });
+    // get only customerID and name and address and taxID
+    pipeline.push({
+      $project: {
+        customerID: "$_id",
+        name: 1,
+        address: 1,
+        taxID: 1,
+        emails: 1,
+        phones: 1,
+      },
+    });
+    const res = await snapshot.aggregate(pipeline).next();
+    return res;
   } catch (error) {
     throw new BadRequestError(error.message);
   }
@@ -53,16 +74,16 @@ const addCustomer = async ({
   emails = [],
 }) => {
   try {
-    const db = admin.firestore();
+    const db = await mongoDB();
     const snapshot = db.collection("customers");
-    const customerQuery = await snapshot.add({
+    const customerQuery = await snapshot.insertOne({
       name,
       address,
       taxID,
       phones,
       emails,
     });
-    return customerQuery.id;
+    return customerQuery.insertedId;
   } catch (error) {
     throw new BadRequestError(error.message);
   }
@@ -79,37 +100,60 @@ const updateCustomer = async ({
   removeEmails = [],
 }) => {
   try {
-    const db = admin.firestore();
-    const snapshot = db.collection("customers").doc(customerID);
-    const customerQuery = await snapshot.update({
-      name,
-      address,
-      taxID,
-    });
-
+    const db = await mongoDB();
+    const snapshot = db.collection("customers");
+    await snapshot.updateOne(
+      { _id: new ObjectId(customerID) },
+      {
+        $set: {
+          name,
+          address,
+          taxID,
+        },
+      }
+    );
     if (addPhones.length > 0) {
-      await snapshot.update({
-        phones: admin.firestore.FieldValue.arrayUnion(...addPhones),
-      });
+      await snapshot.updateOne(
+        { _id: new ObjectId(customerID) },
+        {
+          $push: {
+            phones: { $each: addPhones },
+          },
+        }
+      );
     }
     if (addEmails.length > 0) {
-      await snapshot.update({
-        emails: admin.firestore.FieldValue.arrayUnion(...addEmails),
-      });
+      await snapshot.updateOne(
+        { _id: new ObjectId(customerID) },
+        {
+          $push: {
+            emails: { $each: addEmails },
+          },
+        }
+      );
     }
-
     if (removePhones.length > 0) {
-      await snapshot.update({
-        phones: admin.firestore.FieldValue.arrayRemove(...removePhones),
-      });
+      await snapshot.updateOne(
+        { _id: new ObjectId(customerID) },
+        {
+          $pull: {
+            phones: { $in: removePhones },
+          },
+        }
+      );
+    }
+    if (removeEmails.length > 0) {
+      await snapshot.updateOne(
+        { _id: new ObjectId(customerID) },
+        {
+          $pull: {
+            emails: { $in: removeEmails },
+          },
+        }
+      );
     }
 
-    if (removeEmails.length > 0) {
-      await snapshot.update({
-        emails: admin.firestore.FieldValue.arrayRemove(...removeEmails),
-      });
-    }
-    return customerQuery.id;
+    return customerID;
   } catch (error) {
     throw new BadRequestError(error.message);
   }
@@ -117,40 +161,29 @@ const updateCustomer = async ({
 
 const deleteCustomer = async ({ customerID }) => {
   try {
-    // check if customer has any project in reference
-    const db = admin.firestore();
-    const snapshot = db.collection("works");
-    const customerQuery = await snapshot
-      .where("customer", "==", admin.firestore().doc(`customers/${customerID}`))
-      .get();
-    if (customerQuery.docs.length > 0) {
-      //list of customers name
-      let customerName = customerQuery.docs.map((res) => {
-        return res.data().title;
-      });
-      let messageList = "";
-      customerName.forEach((res) => {
-        messageList += `{${res}}, `;
-      });
-      messageList = messageList.slice(0, -2);
-
-      throw new BadRequestError(
-        `ไม่สามารถลบได้เนื่องจากมีโปรเจค ${messageList} อยู่ในระบบ`
-      );
-    }
-    await db.collection("customers").doc(customerID).delete();
+    const db = await mongoDB();
+    const snapshot = db.collection("customers");
+    await snapshot.deleteOne({
+      _id: new ObjectId(customerID),
+    });
     return true;
   } catch (error) {
     throw new BadRequestError(error.message);
   }
 };
 
-const getCustomersCount = async () => {
+const getCustomersCount = async (search, searchPipeline) => {
   try {
-    const db = admin.firestore();
+    const db = await mongoDB();
     const snapshot = db.collection("customers");
-    const customerQuery = await snapshot.get();
-    return customerQuery.docs.length;
+    let pipeline = [];
+    if (search) {
+      pipeline = [...searchPipeline, ...pipeline];
+    }
+    pipeline.push({ $count: "total" });
+    const total = await snapshot.aggregate(pipeline).next();
+    const totalData = total ? total.total : 0;
+    return totalData;
   } catch (error) {
     throw new BadRequestError(error.message);
   }

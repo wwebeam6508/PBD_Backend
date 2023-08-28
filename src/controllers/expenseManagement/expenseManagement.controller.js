@@ -7,7 +7,7 @@ import {
   getWorksTitle,
   updateExpense,
 } from "../../services/expenseManagement/expenseManagement.service.js";
-import { pageArray } from "../../utils/helper.util.js";
+import { isEmpty, pageArray } from "../../utils/helper.util.js";
 
 async function getExpensesPaginationController(httpRequest) {
   const query = httpRequest.query;
