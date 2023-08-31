@@ -130,19 +130,7 @@ async function getYearsReportController() {
 async function getTotalWorkController(httpRequest) {
   const query = httpRequest.query;
   const year = query.year ? query.year : null;
-  const data = await getTotalWork(year);
-  return {
-    statusCode: 200,
-    body: {
-      data: data,
-    },
-  };
-}
-
-async function getTotalWorkUnfinishedController(httpRequest) {
-  const query = httpRequest.query;
-  const year = query.year ? query.year : null;
-  const data = await getTotalWorkUnfinished(year);
+  const data = await getTotalWorks(year);
   return {
     statusCode: 200,
     body: {
@@ -157,6 +145,5 @@ export {
   getTotalExpenseController as getTotalExpense,
   getYearsReportController as getYearsReport,
   getTotalWorkController as getTotalWork,
-  getTotalWorkUnfinishedController as getTotalWorkUnfinished,
   getDashboardController as getDashboard,
 };

@@ -1,4 +1,3 @@
-import admin from "firebase-admin";
 import { BadRequestError } from "../../utils/api-errors.js";
 import mongoDB from "../../configs/mongo.config.js";
 import { ObjectId } from "mongodb";

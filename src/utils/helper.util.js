@@ -1,6 +1,7 @@
 import admin from "firebase-admin";
 import { uuid } from "uuidv4";
 import bcrypt from "bcrypt";
+import mongoDB from "../configs/mongo.config.js";
 function getOffset(currentPage = 1, listPerPage) {
   return (currentPage - 1) * [listPerPage];
 }
@@ -62,9 +63,13 @@ function checkIsAganistItSelf(requesterID, userid) {
   return false;
 }
 const checkIsGodAdmin = async (id) => {
-  const db = admin.firestore();
-  const response = await db.doc(`users/${id}`).get();
-  if (response.data().userTypeID === "GOD") {
+  const db = await mongoDB();
+  const snapshot = db.collection("users");
+  const res = await snapshot.findOne({
+    _id: id,
+    userTypeID: "GOD",
+  });
+  if (res) {
     return true;
   }
   return false;

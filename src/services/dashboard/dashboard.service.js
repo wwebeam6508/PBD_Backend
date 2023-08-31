@@ -1,6 +1,5 @@
 import mongoDB from "../../configs/mongo.config.js";
 import { BadRequestError } from "../../utils/api-errors.js";
-import admin from "firebase-admin";
 
 // get spent and earn each month in current extract as { month , earn , spend}
 const getSpentAndEarnEachMonth = async (year) => {
@@ -300,7 +299,7 @@ const getTotalWorks = async () => {
   }
 };
 
-const getWorkCustomer = async (worksDoc) => {
+const getWorkCustomer = async () => {
   try {
     const db = await mongoDB();
     const works = db.collection("works");

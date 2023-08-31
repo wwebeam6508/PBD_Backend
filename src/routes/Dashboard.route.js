@@ -11,7 +11,6 @@ import {
   getTotalEarn,
   getTotalExpense,
   getTotalWork,
-  getTotalWorkUnfinished,
   getYearsReport,
 } from "../controllers/dashboard/dashboard.controller.js";
 
@@ -52,12 +51,6 @@ router.get(
   "/getTotalWork",
   Authentication(),
   makeExpressCallback(getTotalWork)
-);
-
-router.get(
-  "/getTotalWorkUnfinished",
-  Authentication(),
-  makeExpressCallback(getTotalWorkUnfinished)
 );
 
 router.get(
