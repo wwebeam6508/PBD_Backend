@@ -1,5 +1,6 @@
 import { BadRequestError } from "../../utils/api-errors.js";
 import mongoDB from "../../configs/mongo.config.js";
+import crypto from "crypto";
 import { ObjectId } from "mongodb";
 
 const getExpenses = async ({
@@ -128,7 +129,17 @@ const addExpense = async ({
         $id: workRef ? new ObjectId(workRef) : null,
       },
       detail,
-      lists,
+      lists: lists.map((list, index) => {
+        const hexString = crypto
+          .createHash("md5")
+          .update(`${new Date().toString()}${index}`)
+          .digest("hex")
+          .slice(0, 24);
+        return {
+          ...list,
+          _id: new ObjectId(hexString),
+        };
+      }),
       currentVat,
     };
     const expenseQuery = await snapshot.insertOne(passData);
@@ -167,20 +178,40 @@ const updateExpense = async ({
         $set: passData,
       }
     );
-    if (addLists.length > 0)
+    if (addLists.length > 0) {
+      // generate hash string 24 length by seed new date to string
+
+      addLists = addLists.map((list, index) => {
+        const hexString = crypto
+          .createHash("md5")
+          .update(`${new Date().toString()}${index}`)
+          .digest("hex")
+          .slice(0, 24);
+        return {
+          ...list,
+          _id: new ObjectId(hexString),
+        };
+      });
       await snapshot.updateOne(
         { _id: new ObjectId(expenseID) },
         {
           $addToSet: { lists: { $each: addLists } },
         }
       );
-    if (removeLists.length > 0)
+    }
+    if (removeLists.length > 0) {
       await snapshot.updateOne(
         { _id: new ObjectId(expenseID) },
         {
-          $pull: { lists: { $in: removeLists } },
-        }
+          $pull: {
+            lists: {
+              _id: { $in: removeLists.map((list) => new ObjectId(list)) },
+            },
+          },
+        },
+        { new: true, multi: true }
       );
+    }
 
     return expenseQuery.upsertedId;
   } catch (error) {
