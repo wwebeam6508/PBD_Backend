@@ -16,9 +16,14 @@ const loginDB = async ({ username, password }) => {
   let pipeline = [];
   pipeline.push({ $match: { username: username } });
   pipeline.push({
+    $addFields: {
+      userTypeID: { $toObjectId: "$userTypeID.$id" },
+    },
+  });
+  pipeline.push({
     $lookup: {
       from: "userType",
-      localField: "userTypeID.$id",
+      localField: "userTypeID",
       foreignField: "_id",
       as: "userType",
     },
@@ -38,7 +43,6 @@ const loginDB = async ({ username, password }) => {
     },
   });
   const res = await ref.aggregate(pipeline).next();
-
   if (!res) {
     throw new NotFoundError("ไม่พบผู้ใช้");
   }

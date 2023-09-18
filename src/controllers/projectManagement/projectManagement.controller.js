@@ -101,7 +101,18 @@ async function getWorkByIDController(httpRequest) {
 
 async function addWorkController(httpRequest) {
   const body = httpRequest.body;
-  await addWork(body);
+  const res = await addWork(body);
+  const cacheKeys = {
+    spentAndEarnEachMonth: `spentAndEarnEachMonth-${res.year}`,
+    yearsReport: `yearsReport`,
+    totalEarn: "totalEarn",
+    ratioWorkCustomer: `ratioTotalWorkAndCustomer`,
+    totalWorks: `totalWorks`,
+  };
+  //reset cache
+  for (const key in cacheKeys) {
+    caching.resetCache(cacheKeys[key]);
+  }
   return {
     statusCode: 200,
     body: {
@@ -113,6 +124,17 @@ async function addWorkController(httpRequest) {
 async function deleteWorkController(httpRequest) {
   const body = httpRequest.body;
   const res = await deleteWork(body);
+  const cacheKeys = {
+    spentAndEarnEachMonth: `spentAndEarnEachMonth-${res.year}`,
+    yearsReport: `yearsReport`,
+    totalEarn: "totalEarn",
+    ratioWorkCustomer: `ratioTotalWorkAndCustomer`,
+    totalWorks: `totalWorks`,
+  };
+  //reset cache
+  for (const key in cacheKeys) {
+    caching.resetCache(cacheKeys[key]);
+  }
   if (res.status) {
     return {
       statusCode: 200,
@@ -132,7 +154,18 @@ async function deleteWorkController(httpRequest) {
 
 async function updateWorkController(httpRequest) {
   const body = httpRequest.body;
-  await updateWork(body);
+  const res = await updateWork(body);
+  const cacheKeys = {
+    spentAndEarnEachMonth: `spentAndEarnEachMonth-${res.year}`,
+    yearsReport: `yearsReport`,
+    totalEarn: "totalEarn",
+    ratioWorkCustomer: `ratioTotalWorkAndCustomer`,
+    totalWorks: `totalWorks`,
+  };
+  //reset cache
+  for (const key in cacheKeys) {
+    caching.resetCache(cacheKeys[key]);
+  }
   return {
     statusCode: 200,
     body: {

@@ -21,11 +21,18 @@ const getSpentAndEarnEachMonth = async (year) => {
         },
       });
     }
+    // where has dateEnd
+    pipelineWork.push({
+      $match: {
+        dateEnd: { $ne: null },
+      },
+    });
+
     // sum of profit in each month fill 0 if no data
     pipelineWork.push({
       $group: {
         _id: {
-          month: { $month: "$date" },
+          month: { $month: "$dateEnd" },
         },
         earn: { $sum: "$profit" },
       },
@@ -132,16 +139,23 @@ const getTotalEarn = async (year) => {
     const start = year ? new Date(year, 0, 1) : null;
     const end = year ? new Date(year, 11, 32) : null;
     let pipeline = [];
+    // where has dateEnd
+    pipeline.push({
+      $match: {
+        dateEnd: { $ne: null },
+      },
+    });
     if (year) {
       pipeline.push({
         $match: {
-          date: {
+          dateEnd: {
             $gte: start,
             $lte: end,
           },
         },
       });
     }
+
     // sum of profit in each list and sum of each month to totalEarn
     pipeline.push({
       $group: {
@@ -210,16 +224,23 @@ const getYearsReport = async () => {
     //find years that have works or expenses in aggregate
     const pipelineWork = [];
     // get sum of profit in each year
+    //where has dateEnd
+    pipelineWork.push({
+      $match: {
+        dateEnd: { $ne: null },
+      },
+    });
     pipelineWork.push({
       $group: {
         _id: {
-          year: { $year: "$date" },
+          year: { $year: "$dateEnd" },
         },
         totalEarn: {
           $sum: "$profit",
         },
       },
     });
+
     const pipelineExpense = [];
     // get sum of price in each year
     pipelineExpense.push({
@@ -305,6 +326,14 @@ const getWorkCustomer = async () => {
     const works = db.collection("works");
     // find total work of each customer
     let pipeline = [];
+
+    //where has dateEnd
+    pipeline.push({
+      $match: {
+        dateEnd: { $ne: null },
+      },
+    });
+
     pipeline.push({
       $lookup: {
         from: "customers", // Replace with the actual collection name of customers
@@ -313,6 +342,7 @@ const getWorkCustomer = async () => {
         as: "customer", // Field in the output document that will contain the customer data
       },
     });
+
     pipeline.push({
       $group: {
         _id: "$customer",
@@ -336,7 +366,10 @@ const getWorkCustomer = async () => {
     let totalWorks = 0;
     let totalEarn = 0;
     worksRes.forEach((res) => {
-      const color = "#" + Math.floor(Math.random() * 16777215).toString(16);
+      // random color for each customer prevent 255,255,255
+      const color = `rgb(${Math.floor(Math.random() * 255)},${Math.floor(
+        Math.random() * 255
+      )},${Math.floor(Math.random() * 255)})`;
       customerWork.push({
         name: res.name[0],
         workCount: res.workCount,

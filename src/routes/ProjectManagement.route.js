@@ -16,25 +16,34 @@ import {
   validateDeleteWork,
   validateUpdateWork,
 } from "../controllers/projectManagement/projectManagement.validator.js";
+import Permission from "../middleware/permission.js";
 
-router.get("/get", Authentication(), makeExpressCallback(getWorkPagination));
+router.get(
+  "/get",
+  Authentication(),
+  Permission("project", "canViewProject"),
+  makeExpressCallback(getWorkPagination)
+);
 router.get("/getByID", Authentication(), makeExpressCallback(getWorkByID));
 router.post(
   "/add",
   makeValidatorCallback(validateAddWork),
   Authentication(),
+  Permission("project", "canEditProject"),
   makeExpressCallback(addWork)
 );
 router.delete(
   "/delete",
   makeValidatorCallback(validateDeleteWork),
   Authentication(),
+  Permission("project", "canRemoveProject"),
   makeExpressCallback(deleteWork)
 );
 router.post(
   "/update",
   makeValidatorCallback(validateUpdateWork),
   Authentication(),
+  Permission("project", "canEditProject"),
   makeExpressCallback(updateWork)
 );
 router.get(

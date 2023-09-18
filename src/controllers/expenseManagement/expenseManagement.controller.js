@@ -8,6 +8,7 @@ import {
   updateExpense,
 } from "../../services/expenseManagement/expenseManagement.service.js";
 import { isEmpty, pageArray } from "../../utils/helper.util.js";
+import caching from "../../utils/caching.js";
 
 async function getExpensesPaginationController(httpRequest) {
   const query = httpRequest.query;
@@ -111,7 +112,17 @@ async function getExpenseByIDController(httpRequest) {
 
 async function addExpenseController(httpRequest) {
   const body = httpRequest.body;
-  await addExpense(body);
+  const res = await addExpense(body);
+
+  const cacheKeys = {
+    spentAndEarnEachMonth: `spentAndEarnEachMonth-${res.year}`,
+    yearsReport: `yearsReport`,
+    totalExpense: `totalExpense`,
+  };
+  //reset cache
+  for (const key in cacheKeys) {
+    caching.resetCache(cacheKeys[key]);
+  }
   return {
     statusCode: 200,
     body: {
@@ -122,7 +133,19 @@ async function addExpenseController(httpRequest) {
 
 async function deleteExpenseController(httpRequest) {
   const body = httpRequest.body;
-  await deleteExpense(body);
+  const res = await deleteExpense(body);
+
+  const cacheKeys = {
+    spentAndEarnEachMonth: `spentAndEarnEachMonth-${res.year}`,
+    yearsReport: `yearsReport`,
+    totalExpense: `totalExpense`,
+  };
+
+  //reset cache
+
+  for (const key in cacheKeys) {
+    caching.resetCache(cacheKeys[key]);
+  }
   return {
     statusCode: 200,
     body: {
@@ -133,7 +156,17 @@ async function deleteExpenseController(httpRequest) {
 
 async function updateExpenseController(httpRequest) {
   const body = httpRequest.body;
-  await updateExpense(body);
+  const res = await updateExpense(body);
+
+  const cacheKeys = {
+    spentAndEarnEachMonth: `spentAndEarnEachMonth-${res.year}`,
+    yearsReport: `yearsReport`,
+    totalExpense: `totalExpense`,
+  };
+  //reset cache
+  for (const key in cacheKeys) {
+    caching.resetCache(cacheKeys[key]);
+  }
   return {
     statusCode: 200,
     body: {

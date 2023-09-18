@@ -19,6 +19,7 @@ import {
   validateDeleteExpense,
   validateUpdateExpense,
 } from "../controllers/expenseManagement/expenseManagement.validator.js";
+import Permission from "../middleware/permission.js";
 
 router.get(
   "/get",

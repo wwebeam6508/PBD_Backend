@@ -153,7 +153,10 @@ const addWork = async ({
         });
     }
 
-    return workID;
+    return {
+      workID: workID,
+      date: date,
+    };
 
     // const db = admin.firestore();
     // await db
@@ -208,6 +211,7 @@ const deleteWork = async ({ workID }) => {
       };
     }
     const workData = await getWorksByID({ workID });
+    const year = workData.date.getFullYear();
     if (workData.images && workData.images.length > 0) {
       await Promise.all(
         workData.images.map(async (image) => {
@@ -230,6 +234,7 @@ const deleteWork = async ({ workID }) => {
 
     return {
       status: true,
+      year: year,
       message: "ลบงานสำเร็จ",
     };
   } catch (error) {
@@ -307,7 +312,10 @@ const updateWork = async ({
           throw new BadRequestError(error.message);
         });
     }
-    return true;
+    return {
+      workID: workID,
+      date: date,
+    };
   } catch (error) {
     throw new BadRequestError(error.message);
   }

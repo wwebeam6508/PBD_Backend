@@ -205,7 +205,7 @@ async function mongoMigrationToMongo() {
       }
       //check any value1 is stringdate if it is then convert to date
       for (const [key2, value2] of Object.entries(value1)) {
-        if (key2 === "date" || key2 === "dateEnd") {
+        if (key2 === "date" || key2 === "dateEnd" || key2 === "createdAt") {
           value1[key2] = new Date(value2);
         }
       }

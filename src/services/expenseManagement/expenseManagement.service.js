@@ -143,7 +143,10 @@ const addExpense = async ({
       currentVat,
     };
     const expenseQuery = await snapshot.insertOne(passData);
-    return expenseQuery.insertedId;
+    return {
+      expenseID: expenseQuery.insertedId,
+      year: new Date(date).getFullYear(),
+    };
   } catch (error) {
     throw new BadRequestError(error.message);
   }
@@ -213,7 +216,10 @@ const updateExpense = async ({
       );
     }
 
-    return expenseQuery.upsertedId;
+    return {
+      expenseID: expenseQuery.upsertedId,
+      year: new Date(date).getFullYear(),
+    };
   } catch (error) {
     throw new BadRequestError(error.message);
   }
@@ -223,10 +229,18 @@ const deleteExpense = async ({ expenseID }) => {
   try {
     const db = await mongoDB();
     const snapshot = db.collection("expenses");
+    //get date
+    const expenseDoc = await getExpenseByID({
+      expenseID,
+    });
+    const date = expenseDoc.date;
+    //delete expense
     await snapshot.deleteOne({
       _id: new ObjectId(expenseID),
     });
-    return true;
+    return {
+      year: new Date(date).getFullYear(),
+    };
   } catch (error) {
     throw new BadRequestError(error.message);
   }

@@ -8,4 +8,5 @@ const cache = new NodeCache({
 export default {
   getFromCache: (key) => cache.get(key),
   setCache: (key, data, ttl) => cache.set(key, data, ttl),
+  resetCache: (key) => cache.del(key),
 };
