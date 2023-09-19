@@ -7,6 +7,7 @@ import { generateJWT, verifyRefreshJWT } from "./jwt.service.js";
 import bcrypt from "bcrypt";
 import { createRequire } from "module";
 import mongoDB from "../../configs/mongo.config.js";
+import { ObjectId } from "mongodb";
 const require = createRequire(import.meta.url);
 const env = require("../../../env_config.json");
 const loginDB = async ({ username, password }) => {
@@ -90,7 +91,7 @@ const checkRefreshToken = async ({ token, userID }) => {
   const db = await mongoDB();
   const ref = db.collection("users");
   let pipeline = [];
-  pipeline.push({ $match: { _id: userID } });
+  pipeline.push({ $match: { _id: new ObjectId(userID) } });
   pipeline.push({
     $project: {
       refreshToken: 1,
@@ -104,8 +105,11 @@ const checkRefreshToken = async ({ token, userID }) => {
 const refreshTokenDB = async ({ token }) => {
   try {
     const data = await verifyRefreshJWT({ token: token });
-    if (!(await checkRefreshToken({ token: token, userID: data.data.userID })))
+    if (
+      !(await checkRefreshToken({ token: token, userID: data.data.userID }))
+    ) {
       throw new AccessDeniedError("Access Denied");
+    }
     const refreshToken = await generateJWT({
       payload: { data: data.data },
       secretKey: env.JWT_REFRESH_TOKEN_SECRET,
@@ -139,4 +143,51 @@ const removeRefreshToken = async ({ userID }) => {
     });
 };
 
-export { loginDB, refreshTokenDB, updateRefreshToken, removeRefreshToken };
+const fetchUserData = async ({ userID }) => {
+  try {
+    const db = await mongoDB();
+    const ref = db.collection("users");
+    let pipeline = [];
+    pipeline.push({ $match: { _id: new ObjectId(userID) } });
+    pipeline.push({
+      $addFields: {
+        userTypeID: { $toObjectId: "$userTypeID.$id" },
+      },
+    });
+    pipeline.push({
+      $lookup: {
+        from: "userType",
+        localField: "userTypeID",
+        foreignField: "_id",
+        as: "userType",
+      },
+    });
+    pipeline.push({ $unwind: "$userType" });
+    pipeline.push({
+      $project: {
+        userID: "$_id",
+        username: 1,
+        userType: {
+          userTypeID: "$userType._id",
+          name: "$userType.name",
+          permission: "$userType.permission",
+        },
+      },
+    });
+    const res = await ref.aggregate(pipeline).next();
+    if (!res) {
+      throw new NotFoundError("ไม่พบผู้ใช้");
+    }
+    return res;
+  } catch (error) {
+    throw new BadRequestError(error.message);
+  }
+};
+
+export {
+  loginDB,
+  refreshTokenDB,
+  updateRefreshToken,
+  removeRefreshToken,
+  fetchUserData,
+};

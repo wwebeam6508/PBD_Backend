@@ -11,22 +11,22 @@ const getSpentAndEarnEachMonth = async (year) => {
     const works = db.collection("works");
     const expenses = db.collection("expenses");
     let pipelineWork = [];
-    if (year) {
-      pipelineWork.push({
-        $match: {
-          date: {
-            $gte: start,
-            $lte: end,
-          },
-        },
-      });
-    }
     // where has dateEnd
     pipelineWork.push({
       $match: {
         dateEnd: { $ne: null },
       },
     });
+    if (year) {
+      pipelineWork.push({
+        $match: {
+          dateEnd: {
+            $gte: start,
+            $lte: end,
+          },
+        },
+      });
+    }
 
     // sum of profit in each month fill 0 if no data
     pipelineWork.push({
@@ -407,7 +407,6 @@ const getWorkCustomer = async () => {
   }
 };
 
-// years list in works or expenses
 const getYearsList = async () => {
   try {
     const db = await mongoDB();

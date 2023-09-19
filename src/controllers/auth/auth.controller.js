@@ -3,6 +3,7 @@ import {
   loginDB,
   updateRefreshToken,
   removeRefreshToken,
+  fetchUserData,
 } from "../../services/auth/auth.service.js";
 /**
  * Handle logging in user.
@@ -34,6 +35,7 @@ async function loginController(httpRequest) {
 
 async function refreshTokenController(httpRequest) {
   const body = httpRequest.body;
+
   const data = await refreshTokenDB({ token: body.refreshToken.split(" ")[1] });
   await updateRefreshToken({ token: data.refreshToken, userID: data.userID });
   return {
@@ -43,6 +45,17 @@ async function refreshTokenController(httpRequest) {
         accessToken: data.accessToken,
         refreshToken: data.refreshToken,
       },
+    },
+  };
+}
+
+async function fetchUserController(httpRequest) {
+  const query = httpRequest.query;
+  const data = await fetchUserData({ userID: query.userID });
+  return {
+    statusCode: 200,
+    body: {
+      data: data,
     },
   };
 }
@@ -62,4 +75,5 @@ export {
   loginController as login,
   refreshTokenController as refreshToken,
   logout as logout,
+  fetchUserController as fetchUser,
 };
