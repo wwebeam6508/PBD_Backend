@@ -11,19 +11,60 @@ import {
 import { pageArray } from "../../utils/helper.util.js";
 
 async function getUser(httpRequest) {
-  const params = httpRequest.params;
   const query = httpRequest.query;
-  const pageSize = query.pageSize ? Number(query.pageSize) : 15;
-  const AllUserCount = await getAllUserCount();
-  const pages = pageArray(AllUserCount, pageSize, params.page, 5);
-  const data = await getUserData({ page: params.page, pageSize: pageSize });
+  const pageSize = query.pageSize ? Number(query.pageSize) : 10;
+  const sortTitle = query.sortTitle ? query.sortTitle : "date";
+  const sortType = query.sortType ? query.sortType : "desc";
+  const search = query.search ? query.search : "";
+  const searchFilter = query.searchFilter ? query.searchFilter : "";
+  const searchPipeline = [
+    {
+      $lookup: {
+        from: "userType",
+        localField: "userTypeID.$id",
+        foreignField: "_id",
+        as: "userTypes",
+      },
+    },
+    {
+      $match:
+        searchFilter === "userType"
+          ? { "userTypes.name": { $regex: search, $options: "i" } }
+          : searchFilter === "date"
+          ? {
+              [searchFilter]: {
+                $gte: new Date(search.split(",")[0]),
+                $lte: new Date(
+                  !isEmpty(search.split(",")[1])
+                    ? search.split(",")[1]
+                    : new Date()
+                ),
+              },
+            }
+          : { [searchFilter]: { $regex: search, $options: "i" } },
+    },
+  ];
+  const allWorksCount = await getAllUserCount(search, searchPipeline);
+  const pages = pageArray(allWorksCount, pageSize, query.page, 5);
+  const userDoc = (
+    await getUserData({
+      page: query.page,
+      pageSize: pageSize,
+      sortTitle: sortTitle,
+      sortType: sortType,
+      search: search,
+      searchPipeline: searchPipeline,
+    })
+  ).map((res) => {
+    return res;
+  });
   return {
     statusCode: 200,
     body: {
-      currentPage: params.page,
+      currentPage: query.page,
       pages: pages,
-      data: data,
-      lastPage: Math.ceil(AllUserCount / pageSize),
+      data: userDoc,
+      lastPage: Math.ceil(allWorksCount / pageSize),
     },
   };
 }

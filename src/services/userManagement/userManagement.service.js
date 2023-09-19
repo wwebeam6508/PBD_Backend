@@ -6,37 +6,56 @@ import {
   conditionEmptyฺBody,
   encryptPassword,
 } from "../../utils/helper.util.js";
+import mongoDB from "../../configs/mongo.config.js";
 
-const getUserData = async ({ page = 1, pageSize = 10 }) => {
+const getUserData = async ({
+  page = 1,
+  pageSize = 2,
+  sortTitle,
+  sortType,
+  search,
+  searchPipeline,
+}) => {
   try {
-    const offset = pageSize * (page - 1);
-    const db = admin.firestore();
-    const snapshot = await db
-      .collection("users")
-      .orderBy("createdAt", "desc")
-      .limit(pageSize)
-      .offset(offset)
-      .get();
-    let data = snapshot.docs.map((doc) => {
-      let newdata = doc.data();
-      newdata.key = doc.id;
-      delete newdata.refreshToken;
-      delete newdata.password;
-      return {
-        ...newdata,
-        key: doc.id,
-      };
-    });
-    for (let i = 0; i < data.length; i++) {
-      const userType = await getUserTypeByIDData(data[i].userTypeID);
-      data[i] = {
-        ...data[i],
-        userType: {
-          name: userType.name,
-        },
-      };
+    const db = await mongoDB();
+    const ref = db.collection("users");
+    let pipeline = [];
+    if (sortTitle && sortType) {
+      pipeline.push({ $sort: { [sortTitle]: sortType === "desc" ? -1 : 1 } });
     }
-    return data;
+    pipeline.push({ $skip: (page - 1) * pageSize });
+    pipeline.push({ $limit: pageSize });
+    pipeline.push({
+      $addFields: {
+        userTypeID: { $toObjectId: "$userTypeID.$id" },
+      },
+    });
+    if (search) {
+      pipeline = [...searchPipeline, ...pipeline];
+    }
+    pipeline.push({
+      $lookup: {
+        from: "userType",
+        localField: "userTypeID",
+        foreignField: "_id",
+        as: "userType",
+      },
+    });
+    pipeline.push({
+      $unwind: "$userType",
+    });
+    pipeline.push({
+      $project: {
+        userID: "$_id",
+        userType: "$userType.name",
+        password: 0,
+        refreshToken: 0,
+      },
+    });
+
+    const response = await ref.aggregate(pipeline).toArray();
+
+    return response;
   } catch (error) {
     throw new BadRequestError(error.message);
   }
@@ -146,11 +165,18 @@ const deleteUserData = async (id, itSelftID) => {
   });
 };
 
-const getAllUserCount = async () => {
+const getAllUserCount = async (search, searchPipeline) => {
   try {
-    const db = admin.firestore();
-    const response = await db.collection("users").get();
-    return response.size;
+    const db = await mongoDB();
+    const snapshot = db.collection("users");
+    let pipeline = [];
+    if (search) {
+      pipeline = [...searchPipeline, ...pipeline];
+    }
+    pipeline.push({ $count: "total" });
+    const total = await snapshot.aggregate(pipeline).next();
+    const totalData = total ? total.total : 0;
+    return totalData;
   } catch (error) {
     throw new BadRequestError(error.message);
   }

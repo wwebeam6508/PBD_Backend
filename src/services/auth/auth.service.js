@@ -122,7 +122,7 @@ const refreshTokenDB = async ({ token }) => {
       userID: data.data.userID,
     };
   } catch (error) {
-    throw new BadRequestError(error.message);
+    throw new BadRequestError("Access Denied");
   }
 };
 

@@ -1,6 +1,5 @@
 import jwt from "jsonwebtoken";
 import { createRequire } from "module";
-import { AccessDeniedError, UnauthorizedError } from "../utils/api-errors.js";
 import mongoDB from "../configs/mongo.config.js";
 import { ObjectId } from "mongodb";
 const require = createRequire(import.meta.url);

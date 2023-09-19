@@ -395,7 +395,7 @@ const getWorkCustomer = async () => {
 
     //sort customer by total work desc
     customerWork.sort((a, b) => b.workCount - a.workCount);
-    //sort customer by total profit desc
+    //sort customer by total profit asc
     customerMoney.sort((a, b) => b.totalProfit - a.totalProfit);
 
     return {
