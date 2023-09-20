@@ -8,7 +8,7 @@ import {
   getUserTypeData,
   updateUserData,
 } from "../../services/userManagement/userManagement.service.js";
-import { pageArray } from "../../utils/helper.util.js";
+import { isEmpty, pageArray } from "../../utils/helper.util.js";
 
 async function getUser(httpRequest) {
   const query = httpRequest.query;

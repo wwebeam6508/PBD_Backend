@@ -167,6 +167,7 @@ async function mongoMigrationToMongo() {
   for (const [key, value] of Object.entries(data)) {
     const collection = database.collection(key);
     for (const [key1, value1] of Object.entries(value)) {
+      console.log(key1);
       if (key === "expenses") {
         if (value1.lists && value1.lists.length > 0) {
           //put objectId to lists

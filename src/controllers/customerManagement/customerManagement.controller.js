@@ -7,6 +7,7 @@ import {
   updateCustomer,
 } from "../../services/customerManagement/customerManagement.service.js";
 import { pageArray } from "../../utils/helper.util.js";
+import caching from "../../utils/caching.js";
 
 async function getCustomersPaginationController(httpRequest) {
   const query = httpRequest.query;
@@ -58,6 +59,9 @@ async function getCustomerByIDController(httpRequest) {
 async function addCustomerController(httpRequest) {
   const body = httpRequest.body;
   await addCustomer(body);
+  const cacheKey = "customerName";
+  caching.resetCache(cacheKey);
+
   return {
     statusCode: 200,
     body: {
@@ -69,6 +73,8 @@ async function addCustomerController(httpRequest) {
 async function updateCustomerController(httpRequest) {
   const body = httpRequest.body;
   await updateCustomer(body);
+  const cacheKey = "customerName";
+  caching.resetCache(cacheKey);
   return {
     statusCode: 200,
     body: {
@@ -80,6 +86,9 @@ async function updateCustomerController(httpRequest) {
 async function deleteCustomerController(httpRequest) {
   const body = httpRequest.body;
   await deleteCustomer(body);
+  const cacheKey = "customerName";
+  caching.resetCache(cacheKey);
+
   return {
     statusCode: 200,
     body: {
