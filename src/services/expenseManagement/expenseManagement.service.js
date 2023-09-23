@@ -72,7 +72,9 @@ const getExpenseByID = async ({ expenseID }) => {
     const snapshot = db.collection("expenses");
     // query expense find objectid by expenseID and get workRef
     let pipeline = [];
-    pipeline.push({ $match: { _id: new ObjectId(expenseID) } });
+    pipeline.push({
+      $match: { _id: new ObjectId(expenseID), status: { $eq: 1 } },
+    });
     pipeline.push({
       $lookup: {
         from: "works",

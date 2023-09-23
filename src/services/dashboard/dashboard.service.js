@@ -15,6 +15,7 @@ const getSpentAndEarnEachMonth = async (year) => {
     pipelineWork.push({
       $match: {
         dateEnd: { $ne: null },
+        status: { $eq: 1 },
       },
     });
     if (year) {
@@ -38,15 +39,6 @@ const getSpentAndEarnEachMonth = async (year) => {
       },
     });
 
-    // pipeline.push({
-    //   $lookup: {
-    //     from: "customers", // Replace with the actual collection name of customers
-    //     localField: "customer.$id", // Field in the "works" collection that references the customer
-    //     foreignField: "_id", // Field in the "customers" collection that is referenced
-    //     as: "customer", // Field in the output document that will contain the customer data
-    //   },
-    // });
-
     const worksRes = await works.aggregate(pipelineWork).toArray();
 
     let pipelineExpense = [];
@@ -57,6 +49,7 @@ const getSpentAndEarnEachMonth = async (year) => {
             $gte: start,
             $lte: end,
           },
+          status: { $eq: 1 },
         },
       });
     }
@@ -143,6 +136,7 @@ const getTotalEarn = async (year) => {
     pipeline.push({
       $match: {
         dateEnd: { $ne: null },
+        status: { $eq: 1 },
       },
     });
     if (year) {
@@ -181,6 +175,11 @@ const getTotalExpense = async (year) => {
     const start = year ? new Date(year, 0, 1) : null;
     const end = year ? new Date(year, 11, 32) : null;
     let pipeline = [];
+    pipeline.push({
+      $match: {
+        status: { $eq: 1 },
+      },
+    });
     if (year) {
       pipeline.push({
         $match: {
@@ -222,12 +221,13 @@ const getYearsReport = async () => {
     const expenses = db.collection("expenses");
 
     //find years that have works or expenses in aggregate
-    const pipelineWork = [];
+    let pipelineWork = [];
     // get sum of profit in each year
     //where has dateEnd
     pipelineWork.push({
       $match: {
         dateEnd: { $ne: null },
+        status: { $eq: 1 },
       },
     });
     pipelineWork.push({
@@ -331,6 +331,7 @@ const getWorkCustomer = async () => {
     pipeline.push({
       $match: {
         dateEnd: { $ne: null },
+        status: { $eq: 1 },
       },
     });
 

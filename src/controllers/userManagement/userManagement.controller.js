@@ -4,10 +4,10 @@ import {
   getAllUserCount,
   getUserByIDData,
   getUserData,
-  getUserTypeByIDData,
-  getUserTypeData,
+  getUserType,
   updateUserData,
 } from "../../services/userManagement/userManagement.service.js";
+import caching from "../../utils/caching.js";
 import { isEmpty, pageArray } from "../../utils/helper.util.js";
 
 async function getUser(httpRequest) {
@@ -19,17 +19,9 @@ async function getUser(httpRequest) {
   const searchFilter = query.searchFilter ? query.searchFilter : "";
   const searchPipeline = [
     {
-      $lookup: {
-        from: "userType",
-        localField: "userTypeID.$id",
-        foreignField: "_id",
-        as: "userTypes",
-      },
-    },
-    {
       $match:
         searchFilter === "userType"
-          ? { "userTypes.name": { $regex: search, $options: "i" } }
+          ? { "userType.name": { $regex: search, $options: "i" } }
           : searchFilter === "date"
           ? {
               [searchFilter]: {
@@ -80,27 +72,6 @@ async function getUserByID(httpRequest) {
   };
 }
 
-async function getUserType() {
-  let data = await getUserTypeData();
-  return {
-    statusCode: 200,
-    body: {
-      data: data,
-    },
-  };
-}
-
-async function getUserTypeByID(httpRequest) {
-  const params = httpRequest.params;
-  let data = await getUserTypeByIDData(params.id);
-  return {
-    statusCode: 200,
-    body: {
-      data: data,
-    },
-  };
-}
-
 async function addUser(httpRequest) {
   const body = httpRequest.body;
   const data = await addUserData(body);
@@ -136,12 +107,26 @@ async function deleteUser(httpRequest) {
     },
   };
 }
+
+async function getUserTypeNameController() {
+  const cacheKey = "userTypeName";
+  const cacheData = caching.getFromCache(cacheKey);
+  const customerName = cacheData ? cacheData : await getUserType();
+  if (!cacheData) {
+    caching.setCache(cacheKey, customerName, 60 * 10);
+  }
+  return {
+    statusCode: 200,
+    body: {
+      data: customerName,
+    },
+  };
+}
 export {
   addUser,
   getUser,
   getUserByID,
-  getUserType,
-  getUserTypeByID,
   updateUser,
   deleteUser,
+  getUserTypeNameController as getUserTypeName,
 };

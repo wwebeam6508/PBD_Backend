@@ -27,7 +27,12 @@ router.get(
   Permission("expense", "canViewExpense"),
   makeExpressCallback(getExpensesPagination)
 );
-router.get("/getByID", Authentication(), makeExpressCallback(getExpenseByID));
+router.get(
+  "/getByID",
+  Authentication(),
+  Permission("expense", "canEditExpense"),
+  makeExpressCallback(getExpenseByID)
+);
 router.post(
   "/add",
   makeValidatorCallback(validateAddExpense),

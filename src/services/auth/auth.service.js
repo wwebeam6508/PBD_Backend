@@ -15,7 +15,7 @@ const loginDB = async ({ username, password }) => {
   const ref = db.collection("users");
   //find by mongoDB not firestore by aggregate
   let pipeline = [];
-  pipeline.push({ $match: { username: username } });
+  pipeline.push({ $match: { username: username, status: { $eq: 1 } } });
   pipeline.push({
     $addFields: {
       userTypeID: { $toObjectId: "$userTypeID.$id" },
@@ -91,7 +91,7 @@ const checkRefreshToken = async ({ token, userID }) => {
   const db = await mongoDB();
   const ref = db.collection("users");
   let pipeline = [];
-  pipeline.push({ $match: { _id: new ObjectId(userID) } });
+  pipeline.push({ $match: { _id: new ObjectId(userID), status: { $eq: 1 } } });
   pipeline.push({
     $project: {
       refreshToken: 1,
@@ -148,7 +148,9 @@ const fetchUserData = async ({ userID }) => {
     const db = await mongoDB();
     const ref = db.collection("users");
     let pipeline = [];
-    pipeline.push({ $match: { _id: new ObjectId(userID) } });
+    pipeline.push({
+      $match: { _id: new ObjectId(userID), status: { $eq: 1 } },
+    });
     pipeline.push({
       $addFields: {
         userTypeID: { $toObjectId: "$userTypeID.$id" },

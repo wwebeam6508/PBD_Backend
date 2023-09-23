@@ -46,7 +46,9 @@ const getCustomerByID = async ({ customerID }) => {
     const db = await mongoDB();
     const snapshot = db.collection("customers");
     let pipeline = [];
-    pipeline.push({ $match: { _id: new ObjectId(customerID) } });
+    pipeline.push({
+      $match: { _id: new ObjectId(customerID), status: { $eq: 1 } },
+    });
     // get only customerID and name and address and taxID
     pipeline.push({
       $project: {

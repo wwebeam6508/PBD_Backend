@@ -19,6 +19,7 @@ const getWorks = async ({
     const snapshot = db.collection("works");
     // query pagination by mongodb not firestore
     let pipeline = [];
+    pipeline.push({ $match: { status: { $eq: 1 } } });
     if (sortTitle && sortType) {
       pipeline.push({ $sort: { [sortTitle]: sortType === "desc" ? -1 : 1 } });
     }
@@ -73,7 +74,9 @@ const getWorksByID = async ({ workID }) => {
   try {
     const snapshot = db.collection("works");
     let pipeline = [];
-    pipeline.push({ $match: { _id: new ObjectId(workID) } });
+    pipeline.push({
+      $match: { _id: new ObjectId(workID), status: { $eq: 1 } },
+    });
     pipeline.push({
       $lookup: {
         from: "customers",
@@ -139,6 +142,7 @@ const addWork = async ({
               $id: customer ? new ObjectId(customer) : null,
             }
           : null,
+        status: 1,
       })
       .catch((error) => {
         throw new BadRequestError(error.message);
@@ -194,7 +198,9 @@ const deleteWork = async ({ workID }) => {
   try {
     const expenseDoc = mongo_DB.collection("expenses");
     let pipeline = [];
-    pipeline.push({ $match: { "workRef.$id": new ObjectId(workID) } });
+    pipeline.push({
+      $match: { "workRef.$id": new ObjectId(workID), status: { $eq: 1 } },
+    });
     pipeline.push({ $project: { title: 1 } });
     const expenseData = await expenseDoc.aggregate(pipeline).toArray();
     if (expenseData.length > 0) {
@@ -227,10 +233,12 @@ const deleteWork = async ({ workID }) => {
       );
     }
     const workDoc = mongo_DB.collection("works");
-    // delete workDoc
-    await workDoc.deleteOne({ _id: new ObjectId(workID) }).catch((error) => {
-      throw new BadRequestError(error.message);
-    });
+    // update status to 0
+    await workDoc
+      .updateOne({ _id: new ObjectId(workID) }, { $set: { status: 0 } })
+      .catch((error) => {
+        throw new BadRequestError(error.message);
+      });
 
     return {
       status: true,
@@ -341,6 +349,7 @@ const getAllWorksCount = async (search, searchPipeline) => {
     const db = await mongoDB();
     const snapshot = db.collection("works");
     let pipeline = [];
+    pipeline.push({ $match: { status: { $eq: 1 } } });
     if (search) {
       pipeline = [...searchPipeline, ...pipeline];
     }
@@ -358,6 +367,7 @@ const getCustomerName = async () => {
     const mongo_DB = await mongoDB();
     const snapshot = mongo_DB.collection("customers");
     let pipeline = [];
+    pipeline.push({ $match: { status: { $eq: 1 } } });
     pipeline.push({ $project: { id: "$_id", name: 1 } });
     const total = await snapshot.aggregate(pipeline).toArray();
     return total;

@@ -32,14 +32,25 @@ export default (permission_group, permission_name) =>
         };
       }
 
-      const permissions = user.userType.permission;
-      if (permissions[permission_group][permission_name]) {
-        next();
+      if (permission_group === "SuperAdmin") {
+        if (user.userType.name === "SuperAdmin") {
+          next();
+        } else {
+          throw {
+            status: 403,
+            message: "ไม่มีสิทธิ์ในการเข้าถึง",
+          };
+        }
       } else {
-        throw {
-          status: 403,
-          message: "ไม่มีสิทธิ์ในการเข้าถึง",
-        };
+        const permissions = user.userType.permission;
+        if (permissions[permission_group][permission_name]) {
+          next();
+        } else {
+          throw {
+            status: 403,
+            message: "ไม่มีสิทธิ์ในการเข้าถึง",
+          };
+        }
       }
     } catch (error) {
       return res.status(error.status).send({
@@ -57,6 +68,9 @@ async function getUserByID(userID) {
   pipeline.push({
     $match: {
       _id: new ObjectId(userID),
+      status: {
+        $eq: 1,
+      },
     },
   });
   pipeline.push({

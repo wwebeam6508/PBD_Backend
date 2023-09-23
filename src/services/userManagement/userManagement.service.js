@@ -1,8 +1,5 @@
-import admin from "firebase-admin";
 import { BadRequestError } from "../../utils/api-errors.js";
 import {
-  checkIsAganistItSelf,
-  checkIsGodAdmin,
   conditionEmptyฺBody,
   encryptPassword,
 } from "../../utils/helper.util.js";
@@ -30,9 +27,48 @@ const getUserData = async ({
         userTypeID: { $toObjectId: "$userTypeID.$id" },
       },
     });
+    pipeline.push({
+      $lookup: {
+        from: "userType",
+        localField: "userTypeID",
+        foreignField: "_id",
+        as: "userType",
+      },
+    });
     if (search) {
-      pipeline = [...searchPipeline, ...pipeline];
+      pipeline = [...pipeline, ...searchPipeline];
     }
+    pipeline.push({
+      $unwind: "$userType",
+    });
+    pipeline.push({
+      $project: {
+        userID: "$_id",
+        userType: "$userType.name",
+        username: 1,
+      },
+    });
+    console.log(pipeline);
+    const response = await ref.aggregate(pipeline).toArray();
+    // remove name of userType as SuperAdmin
+    const result = response.filter((res) => res.userType !== "SuperAdmin");
+    return result;
+  } catch (error) {
+    throw new BadRequestError(error.message);
+  }
+};
+
+const getUserByIDData = async (key) => {
+  try {
+    const db = await mongoDB();
+    const snapshot = db.collection("users");
+    let pipeline = [];
+    pipeline.push({ $match: { _id: key, status: { $eq: 1 } } });
+    pipeline.push({
+      $addFields: {
+        userTypeID: { $toObjectId: "$userTypeID.$id" },
+      },
+    });
     pipeline.push({
       $lookup: {
         from: "userType",
@@ -47,122 +83,82 @@ const getUserData = async ({
     pipeline.push({
       $project: {
         userID: "$_id",
-        userType: "$userType.name",
+        userType: 1,
         password: 0,
         refreshToken: 0,
       },
     });
+    const result = await snapshot.aggregate(pipeline).next();
 
-    const response = await ref.aggregate(pipeline).toArray();
-
-    return response;
-  } catch (error) {
-    throw new BadRequestError(error.message);
-  }
-};
-
-const getUserByIDData = async (key) => {
-  try {
-    const db = admin.firestore();
-    const response = await db.doc(`users/${key}`).get();
-    let data = response.data();
-    data.key = response.id;
-    delete data.refreshToken;
-    delete data.password;
-
-    return data;
-  } catch (error) {
-    throw new BadRequestError(error.message);
-  }
-};
-
-const getUserTypeByIDData = async (id) => {
-  try {
-    const db = admin.firestore();
-    const response = await db.doc(`userType/${id}`).get();
-    return response.data();
-  } catch (error) {
-    throw new BadRequestError(error.message);
-  }
-};
-
-const getUserTypeData = async () => {
-  try {
-    const db = admin.firestore();
-    const response = await db.collection("userType").get();
-    let data = response.docs.map((doc) => {
-      let newdata = doc.data();
-      newdata.key = doc.id;
-      return {
-        ...newdata,
-        key: doc.id,
-      };
-    });
-    return data;
+    return result;
   } catch (error) {
     throw new BadRequestError(error.message);
   }
 };
 
 const addUserData = async (body) => {
-  return new Promise((resolve) => {
-    try {
-      let data = conditionEmptyฺBody(body);
-      const db = admin.firestore();
-      data.password = encryptPassword(data.password);
-      data.createdAt = admin.firestore.FieldValue.serverTimestamp();
-      db.collection(`users`)
-        .add(data)
-        .catch((error) => {
-          throw new BadRequestError(error.message);
-        });
-      resolve(data);
-    } catch (error) {
-      throw new BadRequestError(error.message);
+  try {
+    let data = conditionEmptyฺBody(body);
+    if (checkIsUpdateToSuperAdmin(data.userType)) {
+      throw new BadRequestError("Can't add Super admin");
     }
-  });
+    data.password = encryptPassword(data.password);
+    data.status = 1;
+    const db = await mongoDB();
+    const snapshot = db.collection("users");
+    const result = await snapshot.insertOne(data);
+    if (result.insertedCount === 0) {
+      throw new BadRequestError("Can't add user");
+    }
+    return data;
+  } catch (error) {
+    throw new BadRequestError(error.message);
+  }
 };
 
 const updateUserData = async (body, id) => {
-  return new Promise((resolve) => {
-    try {
-      let data = conditionEmptyฺBody(body);
-      const db = admin.firestore();
-      if (data.password) {
-        data.password = encryptPassword(data.password);
-      }
-      db.doc(`users/${id}`)
-        .update(data)
-        .catch((error) => {
-          throw new BadRequestError(error.message);
-        });
-      resolve(data);
-    } catch (error) {
-      throw new BadRequestError(error.message);
+  try {
+    let data = conditionEmptyฺBody(body);
+    if (data.userType && checkIsUpdateToSuperAdmin(data.userType)) {
+      throw new BadRequestError("Can't update to Super admin");
     }
-  });
+    if (data.password) {
+      data.password = encryptPassword(data.password);
+    }
+    const db = await mongoDB();
+    const snapshot = db.collection("users");
+    const filter = { _id: id };
+
+    const result = await snapshot.updateOne(filter, { $set: data });
+    if (result.modifiedCount === 0) {
+      throw new BadRequestError("Can't update user");
+    }
+    return data;
+  } catch (error) {
+    throw new BadRequestError(error.message);
+  }
 };
 
 const deleteUserData = async (id, itSelftID) => {
-  return new Promise((resolve) => {
-    try {
-      if (checkIsAganistItSelf(itSelftID, id)) {
-        throw new BadRequestError("Can't delete yourself");
-      }
-      if (checkIsGodAdmin(id)) {
-        throw new BadRequestError("Can't delete God admin");
-      }
-      const db = admin.firestore();
-      db.doc(`users/${id}`)
-        .delete()
-        .catch((error) => {
-          throw new BadRequestError(error.message);
-        });
-      resolve();
-    } catch (error) {
-      throw new BadRequestError(error.message);
+  try {
+    if (checkIsAganistItSelf(itSelftID, id)) {
+      throw new BadRequestError("Can't delete yourself");
     }
-  });
+    if (checkIsGodAdmin(id)) {
+      throw new BadRequestError("Can't delete Super admin");
+    }
+    const db = await mongoDB();
+    const snapshot = db.collection("users");
+    const filter = { _id: id };
+    // status to 0
+    const result = await snapshot.updateOne(filter, { $set: { status: 0 } });
+    if (result.modifiedCount === 0) {
+      throw new BadRequestError("Can't delete user");
+    }
+    return result;
+  } catch (error) {
+    throw new BadRequestError(error.message);
+  }
 };
 
 const getAllUserCount = async (search, searchPipeline) => {
@@ -170,6 +166,7 @@ const getAllUserCount = async (search, searchPipeline) => {
     const db = await mongoDB();
     const snapshot = db.collection("users");
     let pipeline = [];
+    pipeline.push({ $match: { status: { $eq: 1 } } });
     if (search) {
       pipeline = [...searchPipeline, ...pipeline];
     }
@@ -182,13 +179,71 @@ const getAllUserCount = async (search, searchPipeline) => {
   }
 };
 
+const getUserType = async () => {
+  try {
+    const mongo_DB = await mongoDB();
+    const snapshot = mongo_DB.collection("userType");
+    let pipeline = [];
+    pipeline.push({ $match: { status: { $eq: 1 } } });
+    pipeline.push({ $project: { id: "$_id", name: 1 } });
+    const query_res = await snapshot.aggregate(pipeline).toArray();
+    // remove name of userType as SuperAdmin
+    const result = query_res.filter((res) => res.name !== "SuperAdmin");
+    return result;
+  } catch (error) {
+    throw new BadRequestError(error.message);
+  }
+};
+
+function checkIsAganistItSelf(requesterID, userid) {
+  if (requesterID === userid) {
+    return true;
+  }
+  return false;
+}
+
+function checkIsUpdateToSuperAdmin(userType) {
+  if (userType === "SuperAdmin") {
+    return true;
+  }
+  return false;
+}
+
+const checkIsGodAdmin = async (id) => {
+  const db = await mongoDB();
+  const snapshot = db.collection("users");
+  let pipeline = [];
+  pipeline.push({ $match: { _id: id, status: { $eq: 1 } } });
+  pipeline.push({
+    $addFields: {
+      userTypeID: { $toObjectId: "$userTypeID.$id" },
+    },
+  });
+  pipeline.push({
+    $lookup: {
+      from: "userType",
+      localField: "userTypeID",
+      foreignField: "_id",
+      as: "userType",
+    },
+  });
+  pipeline.push({
+    $unwind: "$userType",
+  });
+  pipeline.push({ $project: { userType: "$userType.name" } });
+  const result = await snapshot.aggregate(pipeline).next();
+  if (result.userType === "SuperAdmin") {
+    return true;
+  }
+  return false;
+};
+
 export {
   getAllUserCount,
   getUserData,
   getUserByIDData,
-  getUserTypeData,
-  getUserTypeByIDData,
   addUserData,
   updateUserData,
   deleteUserData,
+  getUserType,
 };
