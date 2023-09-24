@@ -10,9 +10,9 @@ import cors from "cors";
 import mongoDB from "./src/configs/mongo.config.js";
 
 const require = createRequire(import.meta.url);
-const env = require("./env_config.json");
+const dotenv = require("dotenv");
+const env = dotenv.config().parsed;
 const limitedInvoke = require("./limitedInvoke.json");
-
 const port = env.NODE_PORT || 3000;
 const app = express();
 const { json, urlencoded } = pkg;
@@ -25,10 +25,9 @@ const corsOptions = {
   origin: env.CLIENT_URL,
   optionsSuccessStatus: 200,
 };
-
 app.use(cors(corsOptions));
 
-if (env.isLimitOn) {
+if (env.IS_LIMITED_ON === "true") {
   app.locals.limit = limitedInvoke.limit;
   app.locals.count = limitedInvoke.count;
   app.locals.date = limitedInvoke.date;

@@ -83,6 +83,7 @@ const addCustomer = async ({
       taxID,
       phones,
       emails,
+      status: 1,
     });
     return customerQuery.insertedId;
   } catch (error) {
@@ -164,9 +165,12 @@ const deleteCustomer = async ({ customerID }) => {
   try {
     const db = await mongoDB();
     const snapshot = db.collection("customers");
-    await snapshot.deleteOne({
-      _id: new ObjectId(customerID),
-    });
+    await snapshot.updateOne(
+      { _id: new ObjectId(customerID) },
+      {
+        $set: { status: 0 },
+      }
+    );
     return true;
   } catch (error) {
     throw new BadRequestError(error.message);
@@ -178,6 +182,7 @@ const getCustomersCount = async (search, searchPipeline) => {
     const db = await mongoDB();
     const snapshot = db.collection("customers");
     let pipeline = [];
+    pipeline.push({ $match: { status: { $eq: 1 } } });
     if (search) {
       pipeline = [...searchPipeline, ...pipeline];
     }

@@ -17,6 +17,9 @@ const getExpenses = async ({
     const snapshot = db.collection("expenses");
     // query pagination by mongodb not firestore
     let pipeline = [];
+    pipeline.push({
+      $match: { status: { $eq: 1 } },
+    });
     if (sortTitle && sortType) {
       pipeline.push({ $sort: { [sortTitle]: sortType === "desc" ? -1 : 1 } });
     }
@@ -237,9 +240,12 @@ const deleteExpense = async ({ expenseID }) => {
     });
     const date = expenseDoc.date;
     //delete expense
-    await snapshot.deleteOne({
-      _id: new ObjectId(expenseID),
-    });
+    await snapshot.updateOne(
+      { _id: new ObjectId(expenseID) },
+      {
+        $set: { status: 0 },
+      }
+    );
     return {
       year: new Date(date).getFullYear(),
     };
@@ -253,6 +259,9 @@ const getExpensesCount = async (search, searchPipeline) => {
     const db = await mongoDB();
     const snapshot = db.collection("expenses");
     let pipeline = [];
+    pipeline.push({
+      $match: { status: { $eq: 1 } },
+    });
     if (search) {
       pipeline = [...searchPipeline, ...pipeline];
     }
@@ -271,6 +280,9 @@ const getWorksTitle = async () => {
     const snapshot = db.collection("works");
     // get it by aggrate
     let pipeline = [];
+    pipeline.push({
+      $match: { status: { $eq: 1 } },
+    });
     pipeline.push({
       $project: {
         id: "$_id",

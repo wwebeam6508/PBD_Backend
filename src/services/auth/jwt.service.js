@@ -2,12 +2,16 @@ import jwt from "jsonwebtoken";
 import { BadRequestError } from "../../utils/api-errors.js";
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
-const env = require("../../../env_config.json");
-
+const dotenv = require("dotenv");
+const env = dotenv.config().parsed;
 const generateJWT = async ({
   payload,
   secretKey = env.JWT_ACCESS_TOKEN_SECRET,
-  signOption = env.JWT_ACCESS_SIGN_OPTIONS,
+  signOption = {
+    issuer: env.JWT_ISSUER,
+    audience: env.JWT_AUDIENCE,
+    expiresIn: env.JWT_ACCESS_TOKEN_EXPIRE,
+  },
 }) => {
   try {
     const token = await `Bearer ${jwt.sign(payload, secretKey, signOption)}`;
@@ -20,7 +24,11 @@ const generateJWT = async ({
 const verifyJWT = async ({
   token,
   secretKey = env.JWT_ACCESS_TOKEN_SECRET,
-  signOption = env.JWT_ACCESS_SIGN_OPTIONS,
+  signOption = {
+    issuer: env.JWT_ISSUER,
+    audience: env.JWT_AUDIENCE,
+    expiresIn: env.JWT_ACCESS_TOKEN_EXPIRE,
+  },
 }) => {
   try {
     const data = await jwt.verify(token, secretKey, signOption);

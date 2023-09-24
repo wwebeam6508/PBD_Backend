@@ -48,7 +48,6 @@ const getUserData = async ({
         username: 1,
       },
     });
-    console.log(pipeline);
     const response = await ref.aggregate(pipeline).toArray();
     // remove name of userType as SuperAdmin
     const result = response.filter((res) => res.userType !== "SuperAdmin");

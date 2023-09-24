@@ -1,8 +1,9 @@
 import { MongoClient, ServerApiVersion } from "mongodb";
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
-const env = require("../../env_config.json");
-const uri = env.mongoDB;
+const dotenv = require("dotenv");
+const env = dotenv.config().parsed;
+const uri = env.MONGO_DB_URL;
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
@@ -17,7 +18,7 @@ export default async function mongoDB() {
     const conn = await client.connect();
     // Send a ping to confirm a successful connection
     //console.log with color blue
-    return conn.db(env.mongoDBName);
+    return conn.db(env.MONGO_DB_NAME);
   } catch (e) {
     // Ensures that the client will close when you finish/error
     console.log(e);

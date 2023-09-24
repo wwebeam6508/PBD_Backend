@@ -1,7 +1,11 @@
 import admin from "firebase-admin";
 import { BadRequestError } from "../../utils/api-errors.js";
 import { uploadFiletoStorage } from "../../utils/helper.util.js";
-import env from "../../configs/firebase.config.js";
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+const dotenv = require("dotenv");
+const env = dotenv.config().parsed;
+
 import mongoDB from "../../configs/mongo.config.js";
 import { ObjectId } from "mongodb";
 

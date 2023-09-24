@@ -1,7 +1,8 @@
 import { initializeApp, cert } from "firebase-admin/app";
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
-const env = require("../../env_config.json");
+const dotenv = require("dotenv");
+const env = dotenv.config().parsed;
 const serviceAccount = require("../../serviceAccount.json");
 
 function init() {

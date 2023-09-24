@@ -9,7 +9,8 @@ import { createRequire } from "module";
 import mongoDB from "../../configs/mongo.config.js";
 import { ObjectId } from "mongodb";
 const require = createRequire(import.meta.url);
-const env = require("../../../env_config.json");
+const dotenv = require("dotenv");
+const env = dotenv.config().parsed;
 const loginDB = async ({ username, password }) => {
   const db = await mongoDB();
   const ref = db.collection("users");
@@ -60,7 +61,11 @@ const loginDB = async ({ username, password }) => {
   const refreshToken = await generateJWT({
     payload: { data: res },
     secretKey: env.JWT_REFRESH_TOKEN_SECRET,
-    signOption: env.JWT_REFRESH_SIGN_OPTIONS,
+    signOption: {
+      issuer: env.JWT_ISSUER,
+      audience: env.JWT_AUDIENCE,
+      expiresIn: env.JWT_REFRESH_TOKEN_EXPIRE,
+    },
   });
   return {
     accessToken: accessToken,

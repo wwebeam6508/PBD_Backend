@@ -11,6 +11,11 @@ const getSpentAndEarnEachMonth = async (year) => {
     const works = db.collection("works");
     const expenses = db.collection("expenses");
     let pipelineWork = [];
+    pipelineWork.push({
+      $match: {
+        status: { $eq: 1 },
+      },
+    });
     // where has dateEnd
     pipelineWork.push({
       $match: {
@@ -42,6 +47,12 @@ const getSpentAndEarnEachMonth = async (year) => {
     const worksRes = await works.aggregate(pipelineWork).toArray();
 
     let pipelineExpense = [];
+    // status eq 1
+    pipelineExpense.push({
+      $match: {
+        status: { $eq: 1 },
+      },
+    });
     if (year) {
       pipelineExpense.push({
         $match: {
@@ -222,6 +233,11 @@ const getYearsReport = async () => {
 
     //find years that have works or expenses in aggregate
     let pipelineWork = [];
+    pipelineWork.push({
+      $match: {
+        status: { $eq: 1 },
+      },
+    });
     // get sum of profit in each year
     //where has dateEnd
     pipelineWork.push({
@@ -241,7 +257,12 @@ const getYearsReport = async () => {
       },
     });
 
-    const pipelineExpense = [];
+    let pipelineExpense = [];
+    pipelineExpense.push({
+      $match: {
+        status: { $eq: 1 },
+      },
+    });
     // get sum of price in each year
     pipelineExpense.push({
       $group: {
@@ -297,6 +318,12 @@ const getTotalWorks = async () => {
     const works = db.collection("works");
     // find total work unfinished
     let pipeline = [];
+    // status eq 1
+    pipeline.push({
+      $match: {
+        status: { $eq: 1 },
+      },
+    });
     pipeline.push({
       $group: {
         _id: null,
@@ -415,7 +442,13 @@ const getYearsList = async () => {
     const expenses = db.collection("expenses");
 
     //find years that have works or expenses in aggregate
-    const pipelineWork = [];
+    let pipelineWork = [];
+    //where status eq 1
+    pipelineWork.push({
+      $match: {
+        status: { $eq: 1 },
+      },
+    });
     pipelineWork.push({
       $group: {
         _id: {
@@ -423,7 +456,12 @@ const getYearsList = async () => {
         },
       },
     });
-    const pipelineExpense = [];
+    let pipelineExpense = [];
+    pipelineExpense.push({
+      $match: {
+        status: { $eq: 1 },
+      },
+    });
     pipelineExpense.push({
       $group: {
         _id: {
