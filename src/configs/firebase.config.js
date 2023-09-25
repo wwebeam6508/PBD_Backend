@@ -12,8 +12,8 @@ function init() {
       privateKey: serviceAccount.private_key.replace(/\\n/g, "\n"),
       projectId: serviceAccount.project_id,
     }),
-    databaseURL: env.databaseURL,
-    storageBucket: env.storageBucket,
+    databaseURL: env.DATABASEURL,
+    storageBucket: env.STORAGEBUCKET,
   });
 }
 

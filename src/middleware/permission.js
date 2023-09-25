@@ -16,7 +16,7 @@ export default (permission_group, permission_name) =>
         expiresIn: env.JWT_ACCESS_TOKEN_EXPIRE,
       });
       req.user = decoded;
-      const userID = req.user.data._id;
+      const userID = req.user.userID;
 
       const user = await getUserByID(userID);
       if (!user) {
@@ -25,7 +25,7 @@ export default (permission_group, permission_name) =>
           message: "ไม่พบผู้ใช้",
         };
       }
-      const userTypeID = req.user.data.userType.userTypeID;
+      const userTypeID = req.user.userType.userTypeID;
       if (user.userType.userTypeID.toString() !== userTypeID) {
         throw {
           status: 401,
@@ -57,7 +57,7 @@ export default (permission_group, permission_name) =>
       return res.status(error.status).send({
         error: {
           message: error.message,
-          code: error.status,
+          code: error.status ? error.status : 500,
         },
       });
     }

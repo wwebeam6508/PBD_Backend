@@ -334,7 +334,7 @@ const updateWork = async ({
 };
 
 function getPathStorageFromUrl(url) {
-  const baseUrl = `https://firebasestorage.googleapis.com/v0/b/${env.storageBucket}/o/`;
+  const baseUrl = `https://firebasestorage.googleapis.com/v0/b/${env.STORAGEBUCKET}/o/`;
 
   let imagePath = url.replace(baseUrl, "");
 
