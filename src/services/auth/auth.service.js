@@ -33,6 +33,7 @@ const loginDB = async ({ username, password }) => {
   pipeline.push({ $unwind: "$userType" });
   pipeline.push({
     $project: {
+      _id: 0,
       userID: "$_id",
       username: 1,
       password: 1,
@@ -75,21 +76,21 @@ const loginDB = async ({ username, password }) => {
 };
 
 const updateRefreshToken = async ({ token, userID }) => {
-  const db = await mongoDB();
-  const ref = db.collection("users");
-  const res = await ref
-    .updateOne(
+  try {
+    const db = await mongoDB();
+    const ref = db.collection("users");
+    const res = await ref.updateOne(
       { _id: userID },
       {
         $set: {
           refreshToken: token,
         },
       }
-    )
-    .catch((err) => {
-      throw new BadRequestError(err.message);
-    });
-  return res;
+    );
+    return res;
+  } catch (error) {
+    throw new BadRequestError(error.message);
+  }
 };
 
 const checkRefreshToken = async ({ token, userID }) => {
@@ -115,14 +116,10 @@ const refreshTokenDB = async ({ token }) => {
     ) {
       throw new AccessDeniedError("Access Denied");
     }
-    const refreshToken = await generateJWT({
+    const accessToken = await generateJWT({
       payload: { data: data.data },
-      secretKey: env.JWT_REFRESH_TOKEN_SECRET,
-      signOption: env.JWT_REFRESH_SIGN_OPTIONS,
     });
-    const accessToken = await generateJWT({ payload: data.data });
     return {
-      refreshToken: refreshToken,
       accessToken: accessToken,
       userID: data.data.userID,
     };
@@ -172,6 +169,7 @@ const fetchUserData = async ({ userID }) => {
     pipeline.push({ $unwind: "$userType" });
     pipeline.push({
       $project: {
+        _id: 0,
         userID: "$_id",
         username: 1,
         userType: {

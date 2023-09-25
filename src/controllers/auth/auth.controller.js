@@ -5,6 +5,7 @@ import {
   removeRefreshToken,
   fetchUserData,
 } from "../../services/auth/auth.service.js";
+import { AccessDeniedError } from "../../utils/api-errors.js";
 /**
  * Handle logging in user.
  * @async
@@ -35,7 +36,9 @@ async function loginController(httpRequest) {
 
 async function refreshTokenController(httpRequest) {
   const body = httpRequest.body;
-
+  if (!body.refreshToken) {
+    throw new AccessDeniedError("refreshToken is required");
+  }
   const data = await refreshTokenDB({ token: body.refreshToken.split(" ")[1] });
   await updateRefreshToken({ token: data.refreshToken, userID: data.userID });
   return {

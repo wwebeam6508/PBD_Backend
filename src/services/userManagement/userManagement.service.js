@@ -46,6 +46,7 @@ const getUserData = async ({
         userID: "$_id",
         userType: "$userType.name",
         username: 1,
+        date: "$createdAt",
       },
     });
     const response = await ref.aggregate(pipeline).toArray();
@@ -83,6 +84,7 @@ const getUserByIDData = async (key) => {
       $project: {
         userID: "$_id",
         userType: 1,
+        date: "$createdAt",
         password: 0,
         refreshToken: 0,
       },

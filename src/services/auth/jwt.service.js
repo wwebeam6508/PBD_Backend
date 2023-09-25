@@ -41,12 +41,22 @@ const verifyJWT = async ({
 const verifyRefreshJWT = async ({
   token,
   secretKey = env.JWT_REFRESH_TOKEN_SECRET,
+  signOption = {
+    issuer: env.JWT_ISSUER,
+    audience: env.JWT_AUDIENCE,
+    expiresIn: env.JWT_REFRESH_TOKEN_EXPIRE,
+  },
 }) => {
   try {
-    return await jwt.verify(token, secretKey, async (err, payload) => {
-      if (err) throw new BadRequestError(err.message);
-      return await payload;
-    });
+    return await jwt.verify(
+      token,
+      secretKey,
+      signOption,
+      async (err, payload) => {
+        if (err) throw new BadRequestError(err.message);
+        return await payload;
+      }
+    );
   } catch (error) {
     throw new BadRequestError(error.message);
   }
