@@ -8,7 +8,7 @@ import {
   updateUserData,
 } from "../../services/userManagement/userManagement.service.js";
 import caching from "../../utils/caching.js";
-import { isEmpty, pageArray } from "../../utils/helper.util.js";
+import { pageArray } from "../../utils/helper.util.js";
 
 async function getUser(httpRequest) {
   const query = httpRequest.query;
@@ -23,16 +23,19 @@ async function getUser(httpRequest) {
         searchFilter === "userType"
           ? { "userType.name": { $regex: search, $options: "i" } }
           : searchFilter === "date"
-          ? {
-              [searchFilter]: {
-                $gte: new Date(search.split(",")[0]),
-                $lte: new Date(
-                  !isEmpty(search.split(",")[1])
-                    ? search.split(",")[1]
-                    : new Date()
-                ),
-              },
-            }
+          ? // if first array not empty and second array value is "" then only greater than and both have value then between
+            search.split(",")[1] === ""
+            ? {
+                createdAt: {
+                  $gte: new Date(search.split(",")[0]),
+                },
+              }
+            : {
+                createdAt: {
+                  $gte: new Date(search.split(",")[0]),
+                  $lte: new Date(search.split(",")[1]),
+                },
+              }
           : { [searchFilter]: { $regex: search, $options: "i" } },
     },
   ];
@@ -62,8 +65,8 @@ async function getUser(httpRequest) {
 }
 
 async function getUserByID(httpRequest) {
-  const params = httpRequest.params;
-  let data = await getUserByIDData(params.id);
+  const query = httpRequest.query;
+  let data = await getUserByIDData(query.userID);
   return {
     statusCode: 200,
     body: {
@@ -98,8 +101,9 @@ async function updateUser(httpRequest) {
 }
 
 async function deleteUser(httpRequest) {
-  const params = httpRequest.params;
-  await deleteUserData(params.id, httpRequest.user.key);
+  const query = httpRequest.query;
+  const userID = httpRequest.user.data.userID;
+  await deleteUserData(query.userID, userID);
   return {
     statusCode: 200,
     body: {

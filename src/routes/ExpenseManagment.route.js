@@ -12,6 +12,7 @@ import {
   getExpensesPagination,
   updateExpense,
   getProjectTitle,
+  getSellerName,
 } from "../controllers/expenseManagement/expenseManagement.controller.js";
 
 import {
@@ -58,6 +59,11 @@ router.get(
   "/getProjectTitle",
   Authentication(),
   makeExpressCallback(getProjectTitle)
+);
+router.get(
+  "/getSellerName",
+  Authentication(),
+  makeExpressCallback(getSellerName)
 );
 
 export default router;

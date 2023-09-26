@@ -4,6 +4,7 @@ import {
   getExpenseByID,
   getExpenses,
   getExpensesCount,
+  getSellerNameData,
   getWorksTitle,
   updateExpense,
 } from "../../services/expenseManagement/expenseManagement.service.js";
@@ -77,11 +78,8 @@ async function getExpensesPaginationController(httpRequest) {
   ).map((res) => {
     const totalPrice = parseFloat(res.lists.reduce((a, b) => a + b.price, 0));
     let passData = {
-      title: res.title,
-      date: res.date,
+      ...res,
       totalPrice: totalPrice ? totalPrice : 0,
-      expenseID: res.expenseID,
-      workRef: res.workRef,
       isVat: res.currentVat > 0 ? true : false,
     };
     return passData;
@@ -175,7 +173,17 @@ async function updateExpenseController(httpRequest) {
   };
 }
 async function getProjectTitleController() {
-  const customerName = await getWorksTitle();
+  const projectTitle = await getWorksTitle();
+  return {
+    statusCode: 200,
+    body: {
+      data: projectTitle,
+    },
+  };
+}
+
+async function getSellerNameController() {
+  const customerName = await getSellerNameData();
   return {
     statusCode: 200,
     body: {
@@ -190,4 +198,5 @@ export {
   getExpensesPaginationController as getExpensesPagination,
   deleteExpenseController as deleteExpense,
   getProjectTitleController as getProjectTitle,
+  getSellerNameController as getSellerName,
 };

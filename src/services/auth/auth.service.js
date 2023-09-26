@@ -1,6 +1,6 @@
 import {
-  AccessDeniedError,
   BadRequestError,
+  ForbiddenError,
   NotFoundError,
 } from "../../utils/api-errors.js";
 import { generateJWT, verifyRefreshJWT } from "./jwt.service.js";
@@ -114,7 +114,7 @@ const refreshTokenDB = async ({ token }) => {
     if (
       !(await checkRefreshToken({ token: token, userID: data.data.userID }))
     ) {
-      throw new AccessDeniedError("Access Denied");
+      throw new ForbiddenError("Token ไม่ถูกต้อง");
     }
     const accessToken = await generateJWT({
       payload: { data: data.data },

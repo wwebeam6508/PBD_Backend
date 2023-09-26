@@ -4,6 +4,7 @@ import {
   encryptPassword,
 } from "../../utils/helper.util.js";
 import mongoDB from "../../configs/mongo.config.js";
+import { ObjectId } from "mongodb";
 
 const getUserData = async ({
   page = 1,
@@ -17,6 +18,7 @@ const getUserData = async ({
     const db = await mongoDB();
     const ref = db.collection("users");
     let pipeline = [];
+    pipeline.push({ $match: { status: { $eq: 1 } } });
     if (sortTitle && sortType) {
       pipeline.push({ $sort: { [sortTitle]: sortType === "desc" ? -1 : 1 } });
     }
@@ -63,7 +65,7 @@ const getUserByIDData = async (key) => {
     const db = await mongoDB();
     const snapshot = db.collection("users");
     let pipeline = [];
-    pipeline.push({ $match: { _id: key, status: { $eq: 1 } } });
+    pipeline.push({ $match: { _id: new ObjectId(key), status: { $eq: 1 } } });
     pipeline.push({
       $addFields: {
         userTypeID: { $toObjectId: "$userTypeID.$id" },
@@ -82,15 +84,14 @@ const getUserByIDData = async (key) => {
     });
     pipeline.push({
       $project: {
+        _id: 0,
         userID: "$_id",
-        userType: 1,
+        username: 1,
+        userType: "$userType._id",
         date: "$createdAt",
-        password: 0,
-        refreshToken: 0,
       },
     });
     const result = await snapshot.aggregate(pipeline).next();
-
     return result;
   } catch (error) {
     throw new BadRequestError(error.message);
@@ -145,17 +146,13 @@ const deleteUserData = async (id, itSelftID) => {
     if (checkIsAganistItSelf(itSelftID, id)) {
       throw new BadRequestError("Can't delete yourself");
     }
-    if (checkIsGodAdmin(id)) {
+    if (await checkIsGodAdmin(id)) {
       throw new BadRequestError("Can't delete Super admin");
     }
     const db = await mongoDB();
     const snapshot = db.collection("users");
-    const filter = { _id: id };
-    // status to 0
+    const filter = { _id: new ObjectId(id) };
     const result = await snapshot.updateOne(filter, { $set: { status: 0 } });
-    if (result.modifiedCount === 0) {
-      throw new BadRequestError("Can't delete user");
-    }
     return result;
   } catch (error) {
     throw new BadRequestError(error.message);
@@ -214,7 +211,7 @@ const checkIsGodAdmin = async (id) => {
   const db = await mongoDB();
   const snapshot = db.collection("users");
   let pipeline = [];
-  pipeline.push({ $match: { _id: id, status: { $eq: 1 } } });
+  pipeline.push({ $match: { _id: new ObjectId(id), status: { $eq: 1 } } });
   pipeline.push({
     $addFields: {
       userTypeID: { $toObjectId: "$userTypeID.$id" },
@@ -231,7 +228,12 @@ const checkIsGodAdmin = async (id) => {
   pipeline.push({
     $unwind: "$userType",
   });
-  pipeline.push({ $project: { userType: "$userType.name" } });
+  pipeline.push({
+    $project: {
+      _id: 0,
+      userType: "$userType.name",
+    },
+  });
   const result = await snapshot.aggregate(pipeline).next();
   if (result.userType === "SuperAdmin") {
     return true;

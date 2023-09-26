@@ -163,6 +163,11 @@ const updateCustomer = async ({
 
 const deleteCustomer = async ({ customerID }) => {
   try {
+    const isHasBeenRef = await checkIsHasBeenRef(customerID);
+    if (isHasBeenRef) {
+      throw new BadRequestError("รายการนี้กำลังถูกใช้อ้างอิงอยู่");
+    }
+
     const db = await mongoDB();
     const snapshot = db.collection("customers");
     await snapshot.updateOne(
@@ -172,6 +177,65 @@ const deleteCustomer = async ({ customerID }) => {
       }
     );
     return true;
+  } catch (error) {
+    throw new BadRequestError(error.message);
+  }
+};
+
+const checkIsHasBeenRef = async (customerID) => {
+  try {
+    const db = await mongoDB();
+    const worksnapshot = db.collection("works");
+    const pipeline = [];
+    // match in ref
+    pipeline.push({
+      $match: {
+        "customer.$id": { $eq: new ObjectId(customerID) },
+        status: { $eq: 1 },
+      },
+    });
+    pipeline.push({
+      $lookup: {
+        from: "customers",
+        localField: "customer.$id",
+        foreignField: "_id",
+        as: "customer",
+      },
+    });
+    pipeline.push({ $count: "total" });
+    const total = await worksnapshot.aggregate(pipeline).next();
+    const totalData = total ? total.total : 0;
+    if (totalData > 0) {
+      return true;
+    }
+
+    // match in ref expense
+    const expensesnapshot = db.collection("expenses");
+    const expensePipeline = [];
+    expensePipeline.push({
+      $match: {
+        "customer.$id": { $eq: new ObjectId(customerID) },
+        status: { $eq: 1 },
+      },
+    });
+    expensePipeline.push({
+      $lookup: {
+        from: "customers",
+        localField: "customer.$id",
+        foreignField: "_id",
+        as: "customer",
+      },
+    });
+    expensePipeline.push({ $count: "total" });
+    const expenseTotal = await expensesnapshot
+      .aggregate(expensePipeline)
+      .next();
+    const expenseTotalData = expenseTotal ? expenseTotal.total : 0;
+    if (expenseTotalData > 0) {
+      return true;
+    }
+
+    return false;
   } catch (error) {
     throw new BadRequestError(error.message);
   }

@@ -31,13 +31,20 @@ const getExpenses = async ({
     pipeline.push({ $limit: pageSize });
     pipeline.push({
       $lookup: {
+        from: "customers",
+        localField: "customerRef.$id",
+        foreignField: "_id",
+        as: "customerRef",
+      },
+    });
+    pipeline.push({
+      $lookup: {
         from: "works",
         localField: "workRef.$id",
         foreignField: "_id",
         as: "workRef",
       },
     });
-
     //get data but (only title  from workRef and workRef is reference) and date to new Date
     pipeline.push({
       $project: {
@@ -53,6 +60,13 @@ const getExpenses = async ({
             else: "",
           },
         },
+        customerRef: {
+          $cond: {
+            if: { $isArray: "$customerRef" },
+            then: "$customerRef.name",
+            else: "",
+          },
+        },
       },
     });
     const total = await snapshot.aggregate(pipeline).toArray();
@@ -61,6 +75,7 @@ const getExpenses = async ({
       return {
         ...res,
         workRef: res.workRef ? res.workRef[0] : "",
+        customerRef: res.customerRef ? res.customerRef[0] : "",
       };
     });
     return data;
@@ -86,7 +101,14 @@ const getExpenseByID = async ({ expenseID }) => {
         as: "workRef",
       },
     });
-    // workRef get only $id
+    pipeline.push({
+      $lookup: {
+        from: "customers",
+        localField: "customerRef.$id",
+        foreignField: "_id",
+        as: "customerRef",
+      },
+    });
     pipeline.push({
       $project: {
         expenseID: "$_id",
@@ -102,6 +124,13 @@ const getExpenseByID = async ({ expenseID }) => {
             else: "",
           },
         },
+        customerRef: {
+          $cond: {
+            if: { $isArray: "$customerRef" },
+            then: "$customerRef._id",
+            else: "",
+          },
+        },
       },
     });
     // get all data
@@ -109,6 +138,7 @@ const getExpenseByID = async ({ expenseID }) => {
     return {
       ...data,
       workRef: data.workRef ? data.workRef[0] : "",
+      customerRef: data.customerRef ? data.customerRef[0] : "",
     };
   } catch (error) {
     throw new BadRequestError(error.message);
@@ -119,6 +149,7 @@ const addExpense = async ({
   title,
   date = new Date(date),
   workRef,
+  customerRef,
   detail,
   lists = [],
   currentVat,
@@ -132,6 +163,10 @@ const addExpense = async ({
       workRef: {
         $ref: "works",
         $id: workRef ? new ObjectId(workRef) : null,
+      },
+      customerRef: {
+        $ref: "customers",
+        $id: customerRef ? new ObjectId(customerRef) : null,
       },
       detail,
       lists: lists.map((list, index) => {
@@ -162,6 +197,7 @@ const updateExpense = async ({
   title,
   date = new Date(date),
   workRef,
+  customerRef,
   detail,
   addLists = [],
   removeLists = [],
@@ -175,7 +211,11 @@ const updateExpense = async ({
       date,
       workRef: {
         $ref: "works",
-        $id: workRef ? new ObjectId(workRef) : null,
+        $id: workRef ? new ObjectId(workRef) : "",
+      },
+      customerRef: {
+        $ref: "customers",
+        $id: customerRef ? new ObjectId(customerRef) : "",
       },
       detail,
       currentVat,
@@ -296,6 +336,29 @@ const getWorksTitle = async () => {
   }
 };
 
+// sorry for my bad english but now i am lazy because i have to fix  in database too
+const getSellerNameData = async () => {
+  try {
+    const db = await mongoDB();
+    const snapshot = db.collection("customers");
+    // get it by aggrate
+    let pipeline = [];
+    pipeline.push({
+      $match: { status: { $eq: 1 } },
+    });
+    pipeline.push({
+      $project: {
+        id: "$_id",
+        name: 1,
+      },
+    });
+    const total = await snapshot.aggregate(pipeline).toArray();
+    return total;
+  } catch (error) {
+    throw new BadRequestError(error.message);
+  }
+};
+
 export {
   getExpensesCount,
   getExpenses,
@@ -304,4 +367,5 @@ export {
   updateExpense,
   deleteExpense,
   getWorksTitle,
+  getSellerNameData,
 };

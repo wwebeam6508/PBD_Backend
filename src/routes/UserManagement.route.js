@@ -32,7 +32,6 @@ router.get(
 router.get(
   "/getUserTypeName",
   Authentication(),
-  Permission("user", "canEditUser"),
   makeExpressCallback(getUserTypeName)
 );
 router.put(
@@ -50,7 +49,7 @@ router.post(
   makeExpressCallback(addUser)
 );
 router.delete(
-  "/deleteUser/:id",
+  "/deleteUser",
   Authentication(),
   Permission("user", "canRemoveUser"),
   makeExpressCallback(deleteUser)

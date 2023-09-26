@@ -16,7 +16,7 @@ export default (permission_group, permission_name) =>
         expiresIn: env.JWT_ACCESS_TOKEN_EXPIRE,
       });
       req.user = decoded;
-      const userID = req.user.userID;
+      const userID = req.user.data.userID;
 
       const user = await getUserByID(userID);
       if (!user) {
@@ -25,10 +25,10 @@ export default (permission_group, permission_name) =>
           message: "ไม่พบผู้ใช้",
         };
       }
-      const userTypeID = req.user.userType.userTypeID;
+      const userTypeID = req.user.data.userType.userTypeID;
       if (user.userType.userTypeID.toString() !== userTypeID) {
         throw {
-          status: 401,
+          status: 403,
           message: "มีการดัดแปลง token ไม่ถูกต้อง",
         };
       }
@@ -54,10 +54,11 @@ export default (permission_group, permission_name) =>
         }
       }
     } catch (error) {
-      return res.status(error.status).send({
+      const error_code = error.code ? error.code : 500;
+      return res.status(error_code).send({
         error: {
           message: error.message,
-          code: error.status ? error.status : 500,
+          code: error_code ? error_code : 500,
         },
       });
     }
