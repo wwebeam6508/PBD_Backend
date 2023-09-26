@@ -104,10 +104,22 @@ const addUserData = async (body) => {
     if (checkIsUpdateToSuperAdmin(data.userType)) {
       throw new BadRequestError("Can't add Super admin");
     }
-    data.password = encryptPassword(data.password);
+    data.password = await encryptPassword(data.password);
     data.status = 1;
+    data.createdAt = new Date();
+    data.userTypeID = {
+      $ref: "userType",
+      $id: new ObjectId(data.userType),
+    };
     const db = await mongoDB();
     const snapshot = db.collection("users");
+    // check is username already exist
+    const isUsernameExist = await snapshot.findOne({
+      username: data.username,
+    });
+    if (isUsernameExist) {
+      throw new BadRequestError("Username already exist");
+    }
     const result = await snapshot.insertOne(data);
     if (result.insertedCount === 0) {
       throw new BadRequestError("Can't add user");
@@ -125,7 +137,7 @@ const updateUserData = async (body, id) => {
       throw new BadRequestError("Can't update to Super admin");
     }
     if (data.password) {
-      data.password = encryptPassword(data.password);
+      data.password = await encryptPassword(data.password);
     }
     const db = await mongoDB();
     const snapshot = db.collection("users");
@@ -148,6 +160,9 @@ const deleteUserData = async (id, itSelftID) => {
     }
     if (await checkIsGodAdmin(id)) {
       throw new BadRequestError("Can't delete Super admin");
+    }
+    if (await checkIsHasBeenRef(id)) {
+      throw new BadRequestError("Can't delete user has been ref");
     }
     const db = await mongoDB();
     const snapshot = db.collection("users");
@@ -192,6 +207,34 @@ const getUserType = async () => {
     throw new BadRequestError(error.message);
   }
 };
+
+async function checkIsHasBeenRef(id) {
+  const db = await mongoDB();
+  const expense_snap = db.collection("expenses");
+  const expense_pipeline = [];
+  expense_pipeline.push({
+    $match: {
+      "customerRef.$id": { $eq: new ObjectId(id) },
+      status: { $eq: 1 },
+    },
+  });
+  expense_pipeline.push({
+    $lookup: {
+      from: "customers",
+      localField: "customerRef.$id",
+      foreignField: "_id",
+      as: "customerRef",
+    },
+  });
+  expense_pipeline.push({ $count: "total" });
+  const expense_total = await expense_snap.aggregate(expense_pipeline).next();
+  const expense_totalData = expense_total ? expense_total.total : 0;
+  if (expense_totalData > 0) {
+    return true;
+  }
+
+  return false;
+}
 
 function checkIsAganistItSelf(requesterID, userid) {
   if (requesterID === userid) {
