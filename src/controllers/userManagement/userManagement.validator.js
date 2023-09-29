@@ -11,6 +11,8 @@ function validateEditUser(httpRequest) {
   const schema = Joi.object({
     username: Joi.string().min(4).max(20).optional(),
     userType: Joi.string().optional(),
+    userID: Joi.string().required(),
+    password: Joi.string().min(4).max(20).optional(),
   });
   return schema.validate(httpRequest.body, options);
 }

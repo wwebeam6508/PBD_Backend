@@ -88,7 +88,6 @@ const getUserByIDData = async (key) => {
         userID: "$_id",
         username: 1,
         userType: "$userType._id",
-        date: "$createdAt",
       },
     });
     const result = await snapshot.aggregate(pipeline).next();
@@ -130,10 +129,12 @@ const addUserData = async (body) => {
   }
 };
 
-const updateUserData = async (body, id) => {
+const updateUserData = async (body) => {
   try {
+    console.log(body);
     let data = conditionEmptyฺBody(body);
-    if (data.userType && checkIsUpdateToSuperAdmin(data.userType)) {
+    delete data.userID;
+    if (data.userType && checkIsUpdateToSuperAdmin(data.userType.name)) {
       throw new BadRequestError("Can't update to Super admin");
     }
     if (data.password) {
@@ -141,13 +142,12 @@ const updateUserData = async (body, id) => {
     }
     const db = await mongoDB();
     const snapshot = db.collection("users");
-    const filter = { _id: id };
-
+    const filter = { _id: new ObjectId(body.userID) };
     const result = await snapshot.updateOne(filter, { $set: data });
     if (result.modifiedCount === 0) {
       throw new BadRequestError("Can't update user");
     }
-    return data;
+    return true;
   } catch (error) {
     throw new BadRequestError(error.message);
   }

@@ -1,16 +1,15 @@
 import {
-  addUserData,
-  deleteUserData,
-  getAllUserCount,
-  getUserByIDData,
-  getUserData,
-  getUserType,
-  updateUserData,
-} from "../../services/userManagement/userManagement.service.js";
+  addUserTypeData,
+  deleteUserTypeData,
+  getAllUserTypeCount,
+  getUserTypeByIDData,
+  getUserTypeData,
+  updateUserTypeData,
+} from "../../services/userTypeManagement/userTypeManagement.service.js";
 import caching from "../../utils/caching.js";
 import { pageArray } from "../../utils/helper.util.js";
 
-async function getUser(httpRequest) {
+async function getUserType(httpRequest) {
   const query = httpRequest.query;
   const pageSize = query.pageSize ? Number(query.pageSize) : 10;
   const sortTitle = query.sortTitle ? query.sortTitle : "date";
@@ -20,9 +19,7 @@ async function getUser(httpRequest) {
   const searchPipeline = [
     {
       $match:
-        searchFilter === "userType"
-          ? { "userType.name": { $regex: search, $options: "i" } }
-          : searchFilter === "date"
+        searchFilter === "date"
           ? // if first array not empty and second array value is "" then only greater than and both have value then between
             search.split(",")[1] === ""
             ? {
@@ -39,10 +36,10 @@ async function getUser(httpRequest) {
           : { [searchFilter]: { $regex: search, $options: "i" } },
     },
   ];
-  const allWorksCount = await getAllUserCount(search, searchPipeline);
+  const allWorksCount = await getAllUserTypeCount(search, searchPipeline);
   const pages = pageArray(allWorksCount, pageSize, query.page, 5);
   const userDoc = (
-    await getUserData({
+    await getUserTypeData({
       page: query.page,
       pageSize: pageSize,
       sortTitle: sortTitle,
@@ -64,9 +61,9 @@ async function getUser(httpRequest) {
   };
 }
 
-async function getUserByID(httpRequest) {
+async function getUserTypeByID(httpRequest) {
   const query = httpRequest.query;
-  let data = await getUserByIDData(query.userID);
+  let data = await getUserTypeByIDData(query.userTypeID);
   return {
     statusCode: 200,
     body: {
@@ -75,9 +72,9 @@ async function getUserByID(httpRequest) {
   };
 }
 
-async function addUser(httpRequest) {
+async function addUserType(httpRequest) {
   const body = httpRequest.body;
-  const data = await addUserData(body);
+  const data = await addUserTypeData(body);
   return {
     statusCode: 200,
     body: {
@@ -87,21 +84,22 @@ async function addUser(httpRequest) {
   };
 }
 
-async function updateUser(httpRequest) {
+async function updateUserType(httpRequest) {
   const body = httpRequest.body;
-  await updateUserData(body);
+  const params = httpRequest.params;
+  const data = await updateUserTypeData(body, params.id);
   return {
     statusCode: 200,
     body: {
+      data: data,
       message: "success",
     },
   };
 }
 
-async function deleteUser(httpRequest) {
+async function deleteUserType(httpRequest) {
   const query = httpRequest.query;
-  const userID = httpRequest.user.data.userID;
-  await deleteUserData(query.userID, userID);
+  await deleteUserTypeData(query.userTypeID);
   return {
     statusCode: 200,
     body: {
@@ -110,25 +108,10 @@ async function deleteUser(httpRequest) {
   };
 }
 
-async function getUserTypeNameController() {
-  const cacheKey = "userTypeName";
-  const cacheData = caching.getFromCache(cacheKey);
-  const customerName = cacheData ? cacheData : await getUserType();
-  if (!cacheData) {
-    caching.setCache(cacheKey, customerName, 60 * 10);
-  }
-  return {
-    statusCode: 200,
-    body: {
-      data: customerName,
-    },
-  };
-}
 export {
-  addUser,
-  getUser,
-  getUserByID,
-  updateUser,
-  deleteUser,
-  getUserTypeNameController as getUserTypeName,
+  addUserType,
+  getUserType,
+  getUserTypeByID,
+  updateUserType,
+  deleteUserType,
 };

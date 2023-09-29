@@ -34,7 +34,7 @@ router.get(
   Authentication(),
   makeExpressCallback(getUserTypeName)
 );
-router.put(
+router.post(
   "/updateUser",
   makeValidatorCallback(validateEditUser),
   Authentication(),
