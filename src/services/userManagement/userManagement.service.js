@@ -131,7 +131,6 @@ const addUserData = async (body) => {
 
 const updateUserData = async (body) => {
   try {
-    console.log(body);
     let data = conditionEmptyฺBody(body);
     delete data.userID;
     if (data.userType && checkIsUpdateToSuperAdmin(data.userType.name)) {
