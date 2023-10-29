@@ -2,16 +2,21 @@ import { BadRequestError } from "../../utils/api-errors.js";
 import mongoDB from "../../configs/mongo.config.js";
 import { ObjectId } from "mongodb";
 
-const prePermission = {
+export const prePermission = {
   user: {
     canViewUser: false,
     canEditUser: false,
     canRemoveUser: false,
   },
-  work: {
-    canViewWork: false,
-    canEditWork: false,
-    canRemoveWork: false,
+  userType: {
+    canViewUserType: false,
+    canEditUserType: false,
+    canRemoveUserType: false,
+  },
+  project: {
+    canViewProject: false,
+    canEditProject: false,
+    canRemoveProject: false,
   },
   expense: {
     canViewExpense: false,
@@ -40,6 +45,10 @@ const getUserTypeData = async ({
       pipeline = [...searchPipeline, ...pipeline];
     }
 
+    pipeline.push({
+      $match: { status: { $eq: 1 }, name: { $ne: "SuperAdmin" } },
+    });
+
     pipeline.push({ $skip: offset });
     pipeline.push({ $limit: pageSize });
     // get only userTypeID and name and address and taxID
@@ -47,7 +56,7 @@ const getUserTypeData = async ({
       $project: {
         userTypeID: "$_id",
         name: 1,
-        createdAt: 1,
+        date: "$createdAt",
       },
     });
     const total = await snapshot.aggregate(pipeline).toArray();
@@ -57,7 +66,7 @@ const getUserTypeData = async ({
   }
 };
 
-const getUserTypeByIDData = async ({ userTypeID }) => {
+const getUserTypeByIDData = async (userTypeID) => {
   try {
     const db = await mongoDB();
     const snapshot = db.collection("userType");
@@ -97,8 +106,20 @@ const addUserTypeData = async ({ name, permission = {} }) => {
   }
 };
 
-const updateUserTypeData = async ({ userTypeID, name, permission = {} }) => {
+const updateUserTypeData = async ({
+  userTypeID,
+  name,
+  permission = {},
+  selfUserTypeID,
+}) => {
   try {
+    if (await checkIsSuperAdmin(userTypeID)) {
+      throw new BadRequestError("ไม่สามารถแก้ไข SuperAdmin ได้");
+    }
+
+    if (isChangedSelf(userTypeID, selfUserTypeID)) {
+      throw new BadRequestError("ไม่สามารถแก้ไขสิทธิ์ตนเองได้");
+    }
     const db = await mongoDB();
     const snapshot = db.collection("userType");
     await snapshot.updateOne(
@@ -117,8 +138,14 @@ const updateUserTypeData = async ({ userTypeID, name, permission = {} }) => {
   }
 };
 
-const deleteUserTypeData = async ({ userTypeID }) => {
+const deleteUserTypeData = async ({ userTypeID, selfUserTypeID }) => {
   try {
+    if (await checkIsSuperAdmin(userTypeID)) {
+      throw new BadRequestError("ไม่สามารถลบ SuperAdmin ได้");
+    }
+    if (isChangedSelf(userTypeID, selfUserTypeID)) {
+      throw new BadRequestError("ไม่สามารถแก้ไขสิทธิ์ตนเองได้");
+    }
     const isHasBeenRef = await checkIsHasBeenRef(userTypeID);
     if (isHasBeenRef) {
       throw new BadRequestError("รายการนี้กำลังถูกใช้อ้างอิงอยู่");
@@ -143,13 +170,13 @@ const checkIsHasBeenRef = async (userTypeID) => {
     const db = await mongoDB();
     const worksnapshot = db.collection("users");
     const pipeline = [];
-    // find if this userTypeID have been used in users
     pipeline.push({
       $match: {
         userTypeID: { $eq: new ObjectId(userTypeID) },
         status: { $eq: 1 },
       },
     });
+    pipeline.push({ $match: {} });
 
     pipeline.push({ $count: "total" });
     const total = await worksnapshot.aggregate(pipeline).next();
@@ -162,6 +189,40 @@ const checkIsHasBeenRef = async (userTypeID) => {
   } catch (error) {
     throw new BadRequestError(error.message);
   }
+};
+
+//check is SuperAdmin
+
+const checkIsSuperAdmin = async (userTypeID) => {
+  try {
+    const db = await mongoDB();
+    const snapshot = db.collection("userType");
+    const pipeline = [];
+    pipeline.push({
+      $match: {
+        _id: { $eq: new ObjectId(userTypeID) },
+        name: { $eq: "SuperAdmin" },
+        status: { $eq: 1 },
+      },
+    });
+    pipeline.push({ $count: "total" });
+    const total = await snapshot.aggregate(pipeline).next();
+    const totalData = total ? total.total : 0;
+    if (totalData > 0) {
+      return true;
+    }
+
+    return false;
+  } catch (error) {
+    throw new BadRequestError(error.message);
+  }
+};
+
+const isChangedSelf = (userTypeID, selfUserTypeID) => {
+  if (userTypeID === selfUserTypeID) {
+    return true;
+  }
+  return false;
 };
 
 const getAllUserTypeCount = async (search, searchPipeline) => {

@@ -31,8 +31,7 @@ const verifyJWT = async ({
   },
 }) => {
   try {
-    const data = await jwt.verify(token, secretKey, signOption);
-    return data;
+    return await jwt.verify(token, secretKey, signOption);
   } catch (error) {
     throw new BadRequestError(error.message);
   }

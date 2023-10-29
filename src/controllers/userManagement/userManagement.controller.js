@@ -8,6 +8,7 @@ import {
   updateUserData,
 } from "../../services/userManagement/userManagement.service.js";
 import caching from "../../utils/caching.js";
+import { verifyJWT } from "../../services/auth/jwt.service.js";
 import { pageArray } from "../../utils/helper.util.js";
 
 async function getUser(httpRequest) {
@@ -89,7 +90,11 @@ async function addUser(httpRequest) {
 
 async function updateUser(httpRequest) {
   const body = httpRequest.body;
-  await updateUserData(body);
+
+  const userData = await verifyJWT({
+    token: httpRequest.headers.Authorization.split(" ")[1],
+  });
+  await updateUserData(body, userData.data.userID);
   return {
     statusCode: 200,
     body: {
@@ -100,8 +105,10 @@ async function updateUser(httpRequest) {
 
 async function deleteUser(httpRequest) {
   const query = httpRequest.query;
-  const userID = httpRequest.user.data.userID;
-  await deleteUserData(query.userID, userID);
+  const userData = await verifyJWT({
+    token: httpRequest.headers.Authorization.split(" ")[1],
+  });
+  await deleteUserData(query.userID, userData.data.userID);
   return {
     statusCode: 200,
     body: {

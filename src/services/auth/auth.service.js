@@ -189,6 +189,10 @@ const fetchUserData = async ({ userID }) => {
   }
 };
 
+const getUserDataFromToken = async () => {
+  
+}
+
 export {
   loginDB,
   refreshTokenDB,

@@ -3,6 +3,7 @@ import MenuRoutes from "./Menu.route.js";
 import ProjectManagement from "./ProjectManagement.route.js";
 import WebsiteManagement from "./WebsiteManagement.route.js";
 import UserManagement from "./UserManagement.route.js";
+import UserTypeManagement from "./UserTypeManagement.route.js";
 import CustomerManagement from "./CustomerManagment.route.js";
 import ExpenseManagment from "./ExpenseManagment.route.js";
 import Dashboard from "./Dashboard.route.js";
@@ -28,6 +29,10 @@ const routes = [
   {
     path: "/usermanagement",
     route: UserManagement,
+  },
+  {
+    path: "/usertypemanagement",
+    route: UserTypeManagement,
   },
   {
     path: "/customermanagement",

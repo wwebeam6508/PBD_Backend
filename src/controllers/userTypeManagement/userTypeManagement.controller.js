@@ -1,3 +1,4 @@
+import { verifyJWT } from "../../services/auth/jwt.service.js";
 import {
   addUserTypeData,
   deleteUserTypeData,
@@ -6,7 +7,6 @@ import {
   getUserTypeData,
   updateUserTypeData,
 } from "../../services/userTypeManagement/userTypeManagement.service.js";
-import caching from "../../utils/caching.js";
 import { pageArray } from "../../utils/helper.util.js";
 
 async function getUserType(httpRequest) {
@@ -86,8 +86,13 @@ async function addUserType(httpRequest) {
 
 async function updateUserType(httpRequest) {
   const body = httpRequest.body;
-  const params = httpRequest.params;
-  const data = await updateUserTypeData(body, params.id);
+  const userData = await verifyJWT({
+    token: httpRequest.headers.Authorization.split(" ")[1],
+  });
+  const data = await updateUserTypeData({
+    ...body,
+    selfUserTypeID: userData.data.userType.userTypeID,
+  });
   return {
     statusCode: 200,
     body: {
@@ -99,7 +104,14 @@ async function updateUserType(httpRequest) {
 
 async function deleteUserType(httpRequest) {
   const query = httpRequest.query;
-  await deleteUserTypeData(query.userTypeID);
+
+  const userData = await verifyJWT({
+    token: httpRequest.headers.Authorization.split(" ")[1],
+  });
+  await deleteUserTypeData({
+    userTypeID: query.userTypeID,
+    selfUserTypeID: userData.data.userType.userTypeID,
+  });
   return {
     statusCode: 200,
     body: {

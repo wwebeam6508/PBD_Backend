@@ -5,6 +5,7 @@ import { BadRequestError } from "../../utils/api-errors.js";
 import fs from "fs";
 import { ObjectId } from "mongodb";
 import crypto from "crypto";
+import { prePermission } from "../../services/userTypeManagement/userTypeManagement.service.js";
 const require = createRequire(import.meta.url);
 // const serviceAccount = require("../../../serviceAccount.json");
 
@@ -92,7 +93,7 @@ async function backupDatabaseMongo() {
       docs[collection.name] = collectionDocs;
     }
 
-    fs.writeFileSync("All.json", JSON.stringify(docs));
+    fs.writeFileSync("backup.json", JSON.stringify(docs));
 
     return {
       headers: {
@@ -131,4 +132,41 @@ async function insertStatus() {
   }
 }
 
-export { backupDatabaseMongo, mongoMigrationToMongo, insertStatus };
+async function mergePermission() {
+  const db = await mongoDB();
+  const collection = db.collection("userType");
+  //updateMany
+  const userType = await collection.find().toArray();
+  for (let i = 0; i < userType.length; i++) {
+    let permission = { ...prePermission, ...userType[i].permission };
+    //remove key that dont have in prePermission
+    for (const [key, value] of Object.entries(permission)) {
+      console.log(value);
+      if (!prePermission[key]) {
+        delete permission[key];
+      }
+    }
+
+    //update permission
+    await collection.updateOne(
+      { _id: new ObjectId(userType[i]._id) },
+      { $set: { permission: permission } }
+    );
+  }
+  return {
+    headers: {
+      "Content-Type": "application/json",
+    },
+    statusCode: 200,
+    body: {
+      message: "merge permission",
+    },
+  };
+}
+
+export {
+  backupDatabaseMongo,
+  mongoMigrationToMongo,
+  insertStatus,
+  mergePermission,
+};

@@ -52,7 +52,7 @@ const getUserData = async ({
       },
     });
     const response = await ref.aggregate(pipeline).toArray();
-    // remove name of userType as SuperAdmin
+    // remove name of userType as SuperAdmin and self
     const result = response.filter((res) => res.userType !== "SuperAdmin");
     return result;
   } catch (error) {
@@ -129,8 +129,11 @@ const addUserData = async (body) => {
   }
 };
 
-const updateUserData = async (body) => {
+const updateUserData = async (body, itSelftID) => {
   try {
+    if (checkIsAganistItSelf(itSelftID, body.userID)) {
+      throw new BadRequestError("Can't delete yourself");
+    }
     let data = conditionEmptyฺBody(body);
     delete data.userID;
     if (data.userType && checkIsUpdateToSuperAdmin(data.userType.name)) {

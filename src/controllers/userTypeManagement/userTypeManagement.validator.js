@@ -10,7 +10,7 @@ const options = {
 function validateEditUserType(httpRequest) {
   const schema = Joi.object({
     name: Joi.string().min(1).max(30).optional(),
-    permission: Joi.string().optional(),
+    permission: Joi.object().optional(),
     userTypeID: Joi.string().required(),
   });
   return schema.validate(httpRequest.body, options);

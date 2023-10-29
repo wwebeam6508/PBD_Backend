@@ -5,6 +5,7 @@ import {
   removeRefreshToken,
   fetchUserData,
 } from "../../services/auth/auth.service.js";
+import { prePermission } from "../../services/userTypeManagement/userTypeManagement.service.js";
 import { AccessDeniedError } from "../../utils/api-errors.js";
 /**
  * Handle logging in user.
@@ -22,6 +23,11 @@ async function loginController(httpRequest) {
     token: data.refreshToken,
     userID: data.userProfile.userID,
   });
+  data.userProfile.userType.permission = {
+    ...prePermission,
+    ...data.userProfile.userType.permission,
+  };
+  data.userProfile.prePermission = prePermission;
   return {
     statusCode: 200,
     body: {
@@ -54,11 +60,18 @@ async function refreshTokenController(httpRequest) {
 
 async function fetchUserController(httpRequest) {
   const query = httpRequest.query;
-  const data = await fetchUserData({ userID: query.userID });
+  let data = await fetchUserData({ userID: query.userID });
+  data.userType.permission = {
+    ...prePermission,
+    ...data.userType.permission,
+  };
   return {
     statusCode: 200,
     body: {
-      data: data,
+      data: {
+        userData: data,
+        prePermission: prePermission,
+      },
     },
   };
 }

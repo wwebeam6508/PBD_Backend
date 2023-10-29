@@ -7,6 +7,7 @@ import Authentication from "../middleware/authentication.js";
 import {
   backupDatabaseMongo,
   insertStatus,
+  mergePermission,
   mongoMigrationToMongo,
 } from "../controllers/migrate/migrate.controller.js";
 import Permission from "../middleware/permission.js";
@@ -28,6 +29,12 @@ router.get(
   Authentication(),
   Permission("SuperAdmin", ""),
   makeExpressCallback(insertStatus)
+);
+router.get(
+  "/mergePermission",
+  Authentication(),
+  Permission("SuperAdmin", ""),
+  makeExpressCallback(mergePermission)
 );
 
 export default router;
