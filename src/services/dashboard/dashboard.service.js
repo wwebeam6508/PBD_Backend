@@ -127,7 +127,7 @@ const getSpentAndEarnEachMonth = async (year) => {
     });
 
     return {
-      month: month,
+      month: month ? month : [],
       years: await getYearsList(),
     };
   } catch (error) {
@@ -173,7 +173,7 @@ const getTotalEarn = async (year) => {
 
     const worksDoc = await works.aggregate(pipeline).next();
 
-    return worksDoc.totalEarn;
+    return worksDoc.totalEarn ? worksDoc.totalEarn : 0;
   } catch (error) {
     throw new BadRequestError(error.message);
   }
@@ -219,7 +219,7 @@ const getTotalExpense = async (year) => {
 
     const expensesRes = await expenses.aggregate(pipeline).next();
 
-    return expensesRes.totalExpense;
+    return expensesRes.totalExpense ? expensesRes.totalExpense : 0;
   } catch (error) {
     throw new BadRequestError(error.message);
   }
@@ -306,7 +306,7 @@ const getYearsReport = async () => {
     });
     yearsReport.sort((a, b) => a.year - b.year);
 
-    return yearsReport;
+    return yearsReport ? yearsReport : [];
   } catch (error) {
     throw new BadRequestError(error.message);
   }
@@ -339,8 +339,10 @@ const getTotalWorks = async () => {
     });
     const worksDoc = await works.aggregate(pipeline).next();
     return {
-      totalWork: worksDoc.totalWork,
-      totalWorkUnfinished: worksDoc.totalWorkUnfinished,
+      totalWork: worksDoc.totalWork ? worksDoc.totalWork : 0,
+      totalWorkUnfinished: worksDoc.totalWorkUnfinished
+        ? worksDoc.totalWorkUnfinished
+        : 0,
     };
   } catch (error) {
     throw new BadRequestError(error.message);
@@ -427,8 +429,8 @@ const getWorkCustomer = async () => {
     customerMoney.sort((a, b) => b.totalProfit - a.totalProfit);
 
     return {
-      customerWork: customerWork,
-      customerMoney: customerMoney,
+      customerWork: customerWork ? customerWork : [],
+      customerMoney: customerMoney ? customerMoney : [],
     };
   } catch (error) {
     throw new BadRequestError(error.message);
@@ -485,7 +487,7 @@ const getYearsList = async () => {
     });
     //sort year desc
     years.sort((a, b) => b - a);
-    return years;
+    return years ? years : [];
   } catch (error) {
     throw new BadRequestError(error.message);
   }

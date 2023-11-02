@@ -1,0 +1,49 @@
+{
+  "works": {},
+  "expenses": [],
+  "users": [
+    {
+      "_id": "a483e346b14d9523b8ef71c8",
+      "userTypeID": {
+        "$ref": "userType",
+        "$id": "cfcd208495d565ef66e7dff9"
+      },
+      "password": "$2b$10$CTMJtIOnXPW/ys84hn6FNejsjbm1fnvn.LzWkVFjRzYE.scYZaHqq",
+      "username": "SuperAdmin",
+      "createdAt": "2023-02-27T10:49:26.000Z",
+      "refreshToken": "",
+      "status": 1
+    }
+  ],
+  "userType": [
+    {
+      "_id": "cfcd208495d565ef66e7dff9",
+      "name": "SuperAdmin",
+      "permission": {
+        "user": {
+          "canEditUser": true,
+          "canRemoveUser": true,
+          "canViewUser": true
+        },
+        "userType": {
+          "canViewUserType": true,
+          "canEditUserType": true,
+          "canRemoveUserType": true
+        },
+        "project": {
+          "canEditProject": true,
+          "canRemoveProject": true,
+          "canViewProject": true
+        },
+        "expense": {
+          "canEditExpense": true,
+          "canRemoveExpense": true,
+          "canViewExpense": true
+        }
+      },
+      "status": 1,
+      "createdAt": "2023-02-27T10:49:26.000Z"
+    }
+  ],
+  "customers": []
+}

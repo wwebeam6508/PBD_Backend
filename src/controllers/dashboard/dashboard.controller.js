@@ -67,7 +67,7 @@ async function getDashboardController() {
   if (!cacheData.ratioWorkCustomer) {
     caching.setCache(cacheKeys.ratioWorkCustomer, ratioWorkCustomer);
   }
-
+  
   return {
     statusCode: 200,
     body: {
