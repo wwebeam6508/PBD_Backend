@@ -4,7 +4,9 @@ import {
   updateRefreshToken,
   removeRefreshToken,
   fetchUserData,
+  changePasswordData,
 } from "../../services/auth/auth.service.js";
+import { verifyJWT } from "../../services/auth/jwt.service.js";
 import { prePermission } from "../../services/userTypeManagement/userTypeManagement.service.js";
 import { AccessDeniedError } from "../../utils/api-errors.js";
 /**
@@ -87,9 +89,26 @@ async function logout(httpRequest) {
   };
 }
 
+async function changePasswordController(httpRequest) {
+  const body = httpRequest.body;
+  const userData = await verifyJWT({
+    token: httpRequest.headers.Authorization.split(" ")[1],
+  });
+  await changePasswordData({
+    userID: userData.data.userID,
+    data: body,
+  });
+  return {
+    statusCode: 200,
+    body: {
+      message: "success",
+    },
+  };
+}
 export {
   loginController as login,
   refreshTokenController as refreshToken,
   logout as logout,
   fetchUserController as fetchUser,
+  changePasswordController as changePassword,
 };

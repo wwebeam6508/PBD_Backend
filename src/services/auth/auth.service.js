@@ -8,6 +8,7 @@ import bcrypt from "bcrypt";
 import { createRequire } from "module";
 import mongoDB from "../../configs/mongo.config.js";
 import { ObjectId } from "mongodb";
+import { encryptPassword } from "../../utils/helper.util.js";
 const require = createRequire(import.meta.url);
 const dotenv = require("dotenv");
 const env = dotenv.config().parsed;
@@ -189,14 +190,30 @@ const fetchUserData = async ({ userID }) => {
   }
 };
 
-const getUserDataFromToken = async () => {
-  
-}
-
+const changePasswordData = async ({ data, userID }) => {
+  if (data.password !== data.confirmPassword) {
+    throw new BadRequestError("รหัสผ่านไม่ตรงกัน");
+  }
+  try {
+    const db = await mongoDB();
+    const ref = db.collection("users");
+    await ref.updateOne(
+      { _id: userID },
+      {
+        $set: {
+          password: (data.password = await encryptPassword(data.password)),
+        },
+      }
+    );
+  } catch (error) {
+    throw new BadRequestError(error.message);
+  }
+};
 export {
   loginDB,
   refreshTokenDB,
   updateRefreshToken,
   removeRefreshToken,
   fetchUserData,
+  changePasswordData,
 };
