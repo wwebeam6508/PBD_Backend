@@ -6,7 +6,7 @@ export const prePermission = {
   user: {
     canViewUser: false,
     canEditUser: false,
-    canRemoveUser: false,
+    canRemove: false,
   },
   userType: {
     canViewUserType: false,

@@ -21,24 +21,24 @@
       "name": "SuperAdmin",
       "permission": {
         "user": {
-          "canEditUser": true,
-          "canRemoveUser": true,
-          "canViewUser": true
+          "canEdit": true,
+          "canRemove": true,
+          "canView": true
         },
         "userType": {
-          "canViewUserType": true,
-          "canEditUserType": true,
-          "canRemoveUserType": true
+          "canView": true,
+          "canEdit": true,
+          "canRemove": true
         },
         "project": {
-          "canEditProject": true,
-          "canRemoveProject": true,
-          "canViewProject": true
+          "canEdit": true,
+          "canRemove": true,
+          "canView": true
         },
         "expense": {
-          "canEditExpense": true,
-          "canRemoveExpense": true,
-          "canViewExpense": true
+          "canEdit": true,
+          "canRemove": true,
+          "canView": true
         }
       },
       "status": 1,

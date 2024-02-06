@@ -51,7 +51,7 @@ router.post(
 router.delete(
   "/deleteUser",
   Authentication(),
-  Permission("user", "canRemoveUser"),
+  Permission("user", "canRemove"),
   makeExpressCallback(deleteUser)
 );
 
