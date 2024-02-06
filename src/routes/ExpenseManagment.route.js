@@ -25,34 +25,34 @@ import Permission from "../middleware/permission.js";
 router.get(
   "/get",
   Authentication(),
-  Permission("expense", "canViewExpense"),
+  Permission("expense", "canView"),
   makeExpressCallback(getExpensesPagination)
 );
 router.get(
   "/getByID",
   Authentication(),
-  Permission("expense", "canEditExpense"),
+  Permission("expense", "canEdit"),
   makeExpressCallback(getExpenseByID)
 );
 router.post(
   "/add",
   makeValidatorCallback(validateAddExpense),
   Authentication(),
-  Permission("expense", "canEditExpense"),
+  Permission("expense", "canEdit"),
   makeExpressCallback(addExpense)
 );
 router.delete(
   "/delete",
   makeValidatorCallback(validateDeleteExpense),
   Authentication(),
-  Permission("expense", "canRemoveExpense"),
+  Permission("expense", "canRemove"),
   makeExpressCallback(deleteExpense)
 );
 router.post(
   "/update",
   makeValidatorCallback(validateUpdateExpense),
   Authentication(),
-  Permission("expense", "canEditExpense"),
+  Permission("expense", "canEdit"),
   makeExpressCallback(updateExpense)
 );
 router.get(

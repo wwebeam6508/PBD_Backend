@@ -19,33 +19,33 @@ import Permission from "../middleware/permission.js";
 router.get(
   "/getUserType",
   Authentication(),
-  Permission("userType", "canViewUserType"),
+  Permission("userType", "canView"),
   makeExpressCallback(getUserType)
 );
 router.get(
   "/getUserTypeByID",
   Authentication(),
-  Permission("userType", "canEditUserType"),
+  Permission("userType", "canEdit"),
   makeExpressCallback(getUserTypeByID)
 );
 router.post(
   "/updateUserType",
   makeValidatorCallback(validateEditUserType),
   Authentication(),
-  Permission("userType", "canEditUserType"),
+  Permission("userType", "canEdit"),
   makeExpressCallback(updateUserType)
 );
 router.post(
   "/addUserType",
   makeValidatorCallback(validateAddUserType),
   Authentication(),
-  Permission("userType", "canEditUserType"),
+  Permission("userType", "canEdit"),
   makeExpressCallback(addUserType)
 );
 router.delete(
   "/deleteUserType",
   Authentication(),
-  Permission("userType", "canRemoveUserType"),
+  Permission("userType", "canRemove"),
   makeExpressCallback(deleteUserType)
 );
 

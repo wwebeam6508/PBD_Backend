@@ -21,7 +21,7 @@ import Permission from "../middleware/permission.js";
 router.get(
   "/get",
   Authentication(),
-  Permission("project", "canViewProject"),
+  Permission("project", "canView"),
   makeExpressCallback(getWorkPagination)
 );
 router.get("/getByID", Authentication(), makeExpressCallback(getWorkByID));
@@ -29,21 +29,21 @@ router.post(
   "/add",
   makeValidatorCallback(validateAddWork),
   Authentication(),
-  Permission("project", "canEditProject"),
+  Permission("project", "canEdit"),
   makeExpressCallback(addWork)
 );
 router.delete(
   "/delete",
   makeValidatorCallback(validateDeleteWork),
   Authentication(),
-  Permission("project", "canRemoveProject"),
+  Permission("project", "canRemove"),
   makeExpressCallback(deleteWork)
 );
 router.post(
   "/update",
   makeValidatorCallback(validateUpdateWork),
   Authentication(),
-  Permission("project", "canEditProject"),
+  Permission("project", "canEdit"),
   makeExpressCallback(updateWork)
 );
 router.get(
