@@ -20,13 +20,13 @@ import Permission from "../middleware/permission.js";
 router.get(
   "/getUser",
   Authentication(),
-  Permission("user", "canViewUser"),
+  Permission("user", "canView"),
   makeExpressCallback(getUser)
 );
 router.get(
   "/getUserByID",
   Authentication(),
-  Permission("user", "canEditUser"),
+  Permission("user", "canEdit"),
   makeExpressCallback(getUserByID)
 );
 router.get(
@@ -38,14 +38,14 @@ router.post(
   "/updateUser",
   makeValidatorCallback(validateEditUser),
   Authentication(),
-  Permission("user", "canEditUser"),
+  Permission("user", "canEdit"),
   makeExpressCallback(updateUser)
 );
 router.post(
   "/addUser",
   makeValidatorCallback(validateAddUser),
   Authentication(),
-  Permission("user", "canEditUser"),
+  Permission("user", "canEdit"),
   makeExpressCallback(addUser)
 );
 router.delete(
