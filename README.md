@@ -6,6 +6,4 @@ running by firebase cloud function with mongoDB serverless and firebase storage
 ## Thank to Original Idea
 https://github.com/sujeet-agrahari/node-express-clean-architecture#readme
 
-## License
-
-[MIT](LICENSE)
+## this project move to https://github.com/wwebeam6508/PBD_Backend_Go for using golang instead of express.js
